@@ -24,8 +24,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      {/* Tambahkan 'suppressHydrationWarning={true}' di sini.
+        Ini akan mengabaikan peringatan ketidakcocokan 'className'
+        yang disebabkan oleh next/font.
+      */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning={true}
       >
         {children}
       </body>
