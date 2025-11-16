@@ -1,8 +1,5 @@
 "use client";
 
-// --- 1. Impor yang Diperbarui ---
-// Menghapus: Heart, MessageSquare, Smile, Users
-// Menambah: ArrowDownLeft, FileText, MoreHorizontal, Send, UserCircle
 import {
   ArrowDownLeft,
   FileText,
@@ -13,7 +10,6 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import React from "react";
-// Menambah 'Button' untuk mockup
 import { Button, Card, Col, Container, Row } from "react-bootstrap";
 
 export default function About() {
@@ -27,7 +23,6 @@ export default function About() {
     return <section id="about" style={{ minHeight: "100vh" }} />;
   }
 
-  // Variabel tema Anda (sudah benar)
   const textBodyColor = "text-body";
   const textMutedColor = "text-body-secondary";
   const cardBgColor = "var(--bs-card-bg)";
@@ -37,34 +32,29 @@ export default function About() {
   return (
     <section id="about" className="bg-body py-5">
       <Container className="py-5">
-        {/* --- Row 1: Our Vision (Dengan Mockup) --- */}
         <Row className="align-items-center justify-content-center g-5 mb-5 pb-5">
-          {/* --- 2. Kode Mockup Smartphone (Dimasukkan di sini) --- */}
           <Col
             lg={6}
             className="d-flex align-items-center justify-content-center"
           >
-            {/* --- Phone Mockup Wrapper --- */}
             <div
               className="shadow-lg"
               style={{
-                width: "280px", // Lebar ponsel
-                borderRadius: "2rem", // Radius bodi ponsel
-                background: "#222", // Warna bodi ponsel (selalu gelap)
-                padding: "10px", // Ukuran bezel
-                transform: "rotate(-3deg)", // Sedikit miring
+                width: "280px",
+                borderRadius: "2rem",
+                background: "#222",
+                padding: "10px",
+                transform: "rotate(-3deg)",
               }}
             >
-              {/* --- Phone Screen --- */}
               <Card
                 className="border-0"
                 style={{
-                  borderRadius: "1.5rem", // Radius layar
-                  background: cardBgColor, // Warna layar (Sadar Tema)
-                  overflow: "hidden", // Untuk memotong konten
+                  borderRadius: "1.5rem",
+                  background: cardBgColor,
+                  overflow: "hidden",
                 }}
               >
-                {/* --- App Header (Dynamic Island/Notch Area) --- */}
                 <div
                   className="w-100 d-flex justify-content-center"
                   style={{ paddingTop: "10px" }}
@@ -73,13 +63,12 @@ export default function About() {
                     style={{
                       width: "80px",
                       height: "20px",
-                      background: "#222", // Warna notch
+                      background: "#222",
                       borderRadius: "0 0 10px 10px",
                     }}
                   />
                 </div>
 
-                {/* --- App User Info --- */}
                 <Card.Header
                   className={`d-flex align-items-center justify-content-between bg-transparent border-0 pt-3 px-3 ${textBodyColor}`}
                 >
@@ -90,16 +79,14 @@ export default function About() {
                   <MoreHorizontal size={20} className={textMutedColor} />
                 </Card.Header>
 
-                {/* --- App Balance (Social Score / Poin) --- */}
                 <Card.Body className="text-center pt-2">
                   <p className={`mb-0 ${textMutedColor}`}>Community Score</p>
                   <h1 className={`fw-bold ${textBodyColor}`}>1,558</h1>
                 </Card.Body>
 
-                {/* --- App Action Buttons --- */}
                 <Card.Footer
                   className="border-0 pb-3 px-3"
-                  style={{ backgroundColor: subtleBgColor }} // Latar footer app
+                  style={{ backgroundColor: subtleBgColor }}
                 >
                   <Row className="text-center g-2">
                     <Col>
@@ -107,7 +94,7 @@ export default function About() {
                         variant="light"
                         className="rounded-circle p-2"
                         style={{
-                          backgroundColor: "var(--bs-body-bg)", // Tombol menyatu
+                          backgroundColor: "var(--bs-body-bg)",
                         }}
                       >
                         <Send size={20} className={primaryColor} />
@@ -176,7 +163,6 @@ export default function About() {
             </div>
           </Col>
 
-          {/* --- Teks Visi Anda (Tetap sama) --- */}
           <Col lg={6}>
             <h5 className={`${primaryColor} fw-bold`}>Our Vision</h5>
             <h2 className={`display-5 fw-bold ${textBodyColor}`}>
@@ -190,10 +176,8 @@ export default function About() {
           </Col>
         </Row>
 
-        {/* --- Row 2: Our Mission (Tetap sama) --- */}
         <Row className="align-items-center justify-content-center g-5 mb-5 pb-5">
           <Col lg={6} md={8} className="order-lg-2">
-            {/* Simplified "Security" graphic */}
             <div
               className="d-flex justify-content-center align-items-center rounded-5"
               style={{ minHeight: "300px", backgroundColor: subtleBgColor }}
@@ -218,7 +202,6 @@ export default function About() {
           </Col>
         </Row>
 
-        {/* --- Row 3: Key Numbers (Tetap sama) --- */}
         <Row className="text-center g-4">
           <Col md={3} sm={6}>
             <h2 className={`display-3 fw-bold ${textBodyColor}`}>99.9%</h2>

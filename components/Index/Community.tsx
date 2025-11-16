@@ -1,13 +1,10 @@
-// components/Index/Community.tsx
 "use client";
 
 import { useTheme } from "next-themes";
-import React from "react";
-// 💡 Impor Row, Col, dan ArrowRight untuk CTA
 import Image from "next/image";
+import React from "react";
 import { Button, Card, Container } from "react-bootstrap";
 
-// 💡 KITA BAGI DATA JADI DUA BARIS
 const communitiesRow1 = [
   {
     imageSrc: "/images/index/88.jpg",
@@ -106,10 +103,9 @@ export default function Community() {
   }, []);
 
   if (!isMounted) {
-    return <section id="community" className="bg-body py-5" />; // Placeholder
+    return <section id="community" className="bg-body py-5" />;
   }
 
-  // --- Fungsi untuk merender Card ---
   const renderCommunityCard = (community: any, index: string | number) => (
     <div key={index} className="scroller-item">
       <Card
@@ -149,7 +145,6 @@ export default function Community() {
   return (
     <section id="community" className="bg-body py-5">
       <Container style={{ maxWidth: "960px" }}>
-        {/* --- 1. Judul Bagian --- */}
         <div className="text-center">
           <h2 className="display-5 fw-bold text-body">
             Join Our Growing Communities
@@ -160,11 +155,8 @@ export default function Community() {
         </div>
       </Container>
 
-      {/* --- 2. 💡 SLIDER MARQUEE GANDA --- */}
-      {/* Baris Pertama (Normal) */}
       <div className="scroller-container mt-5">
         <div className="scroller-track">
-          {/* Duplikasi 2x (Total 6 item) */}
           {communitiesRow1.map((community, index) =>
             renderCommunityCard(community, `prime-1-${index}`)
           )}
@@ -174,11 +166,8 @@ export default function Community() {
         </div>
       </div>
 
-      {/* Baris Kedua (Dibalik) */}
       <div className="scroller-container mt-4">
-        {/* Tambahkan kelas 'scroller-track-reverse' */}
         <div className="scroller-track scroller-track-reverse">
-          {/* Duplikasi 2x (Total 14 item) */}
           {communitiesRow2.map((community, index) =>
             renderCommunityCard(community, `prime-2-${index}`)
           )}

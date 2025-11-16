@@ -3,7 +3,6 @@
 import { BadgeCheck, Heart, MessageCircle, Repeat } from "lucide-react";
 import { Button, Image } from "react-bootstrap";
 
-// Tipe data
 type PostUser = {
   name: string;
   username: string;
@@ -21,7 +20,7 @@ type Post = {
   user: PostUser;
   content: string;
   timestamp: string;
-  media?: PostMedia; // Dibuat opsional
+  media?: PostMedia;
 };
 
 interface PostCardProps {
@@ -30,7 +29,6 @@ interface PostCardProps {
 
 export default function PostCard({ post }: PostCardProps) {
   return (
-    // Desain minimalis dengan border-bottom
     <div className="d-flex align-items-start p-3 border-bottom">
       <Image
         src={post.user.avatar}
@@ -46,7 +44,6 @@ export default function PostCard({ post }: PostCardProps) {
       />
 
       <div className="w-100">
-        {/* Header Postingan */}
         <div className="d-flex align-items-center mb-1">
           <h6 className="fw-bold mb-0 text-body d-flex align-items-center">
             {post.user.name}
@@ -64,19 +61,14 @@ export default function PostCard({ post }: PostCardProps) {
           </small>
         </div>
 
-        {/* Konten Postingan */}
-        <p
-          className="text-body mb-2"
-          style={{ whiteSpace: "pre-line" }} // Ini akan membaca baris baru
-        >
+        <p className="text-body mb-2" style={{ whiteSpace: "pre-line" }}>
           {post.content}
         </p>
 
-        {/* Media */}
         {post.media && (
           <div
             className="mt-3 rounded-4 overflow-hidden"
-            style={{ maxHeight: "500px", backgroundColor: "#000" }} // Tambahkan bg hitam untuk video
+            style={{ maxHeight: "500px", backgroundColor: "#000" }}
           >
             {post.media.type === "image" ? (
               <Image
@@ -89,11 +81,11 @@ export default function PostCard({ post }: PostCardProps) {
             ) : (
               <video
                 src={post.media.url}
-                controls // 1. Tetap ada tombol pause/play
-                autoPlay // 2. Autoplay
-                loop // 3. Loop (tanpa berhenti)
-                muted // 4. PENTING agar autoplay jalan
-                playsInline // 5. Bantuan untuk mobile
+                controls
+                autoPlay
+                loop
+                muted
+                playsInline
                 className="w-100"
                 style={{ maxHeight: "500px", display: "block" }}
               >
@@ -103,7 +95,6 @@ export default function PostCard({ post }: PostCardProps) {
           </div>
         )}
 
-        {/* Tombol Aksi */}
         <div className="d-flex justify-content-between mt-3 text-body-secondary">
           <Button
             variant="link"

@@ -1,7 +1,7 @@
 "use client";
 
 import { BadgeCheck } from "lucide-react";
-import Link from "next/link"; // 1. Impor Link dari next/link
+import Link from "next/link";
 import { Button, Image, ListGroup } from "react-bootstrap";
 
 export default function RightSidebar() {
@@ -26,12 +26,11 @@ export default function RightSidebar() {
     },
   ];
 
-  // 2. Buat data trends menjadi array agar dinamis
   const trends = [
     {
       id: 1,
       category: "Trending in Indonesia",
-      tag: "Nextjs", // Tag bersih tanpa '#'
+      tag: "Nextjs",
       posts: "15.2k posts",
     },
     {
@@ -50,9 +49,7 @@ export default function RightSidebar() {
 
   return (
     <div className="position-sticky" style={{ top: "80px" }}>
-      {/* Wadah datar (flat) */}
       <div className="rounded-4 p-3 bg-body-tertiary">
-        {/* Bagian: Siapa untuk diikuti */}
         <div>
           <h5 className="fw-bold fs-6 text-body mb-2">Siapa untuk diikuti</h5>
           <ListGroup variant="flush" className="mt-2">
@@ -61,7 +58,6 @@ export default function RightSidebar() {
                 key={user.id}
                 className="bg-transparent border-0 px-0 py-2 d-flex align-items-center"
               >
-                {/* 3. Menambahkan Link untuk avatar dan info user */}
                 <Link
                   href={`/profile/${user.username}`}
                   className="d-flex align-items-center text-decoration-none flex-grow-1 overflow-hidden me-2"
@@ -72,7 +68,6 @@ export default function RightSidebar() {
                     width={32}
                     height={32}
                     alt={user.name}
-                    // 👇 Tambahkan baris ini
                     style={{ objectFit: "cover" }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
@@ -84,7 +79,6 @@ export default function RightSidebar() {
                       className="fw-bold mb-0 d-flex align-items-center"
                       style={{ fontSize: "0.9rem" }}
                     >
-                      {/* Tambahkan 'text-body' agar tidak jadi biru */}
                       <span className="text-truncate text-body">
                         {user.name}
                       </span>
@@ -109,7 +103,6 @@ export default function RightSidebar() {
                   </div>
                 </Link>
 
-                {/* Tombol Follow tetap terpisah dari Link */}
                 <Button
                   variant="dark"
                   size="sm"
@@ -130,17 +123,15 @@ export default function RightSidebar() {
 
         <hr className="my-3" />
 
-        {/* Bagian: Trends */}
         <div>
           <h5 className="fw-bold fs-6 text-body mb-2">Trends for you</h5>
-          {/* 4. Mengubah list trends menjadi dinamis (mapping) */}
           <ListGroup variant="flush" className="mt-2">
             {trends.map((trend) => (
               <ListGroup.Item
                 key={trend.id}
-                as={Link} // 5. Mengubah ListGroup.Item menjadi Link
-                href={`/explore?tag=${trend.tag}`} // 6. Menambahkan href
-                action // Menambahkan efek hover
+                as={Link}
+                href={`/explore?tag=${trend.tag}`}
+                action
                 className="bg-transparent border-0 px-0 py-1 text-body-secondary text-decoration-none"
               >
                 <small className="d-block" style={{ fontSize: "0.75rem" }}>
@@ -150,7 +141,7 @@ export default function RightSidebar() {
                   className="fw-bold mb-0 text-body"
                   style={{ fontSize: "0.9rem" }}
                 >
-                  #{trend.tag} {/* Menampilkan tag dengan '#' */}
+                  #{trend.tag}
                 </h6>
                 <small style={{ fontSize: "0.75rem" }}>{trend.posts}</small>
               </ListGroup.Item>

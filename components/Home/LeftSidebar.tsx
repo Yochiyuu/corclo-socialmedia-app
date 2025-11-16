@@ -19,7 +19,6 @@ export default function LeftSidebar() {
 
   return (
     <div className="position-sticky" style={{ top: "80px" }}>
-      {/* Gap diubah dari gap-1 menjadi gap-0 */}
       <div className="d-flex flex-column gap-0">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;

@@ -3,15 +3,10 @@ import Link from "next/link";
 import { Col, Container, Row } from "react-bootstrap";
 
 export default function Footer() {
-  // Catatan: Tautan internal menggunakan komponen Link dari Next.js 
-  // agar navigasi antar halaman cepat.
   return (
     <footer className="bg-body-tertiary border-top py-5">
       <Container style={{ maxWidth: "960px" }}>
-        {/* --- Bagian ATAS: Link Sitemap --- */}
         <Row className="gy-4 mb-4">
-          
-          {/* Kolom 1: Brand & Tagline */}
           <Col lg={4} md={12} className="text-center text-lg-start">
             <h3 className="fs-4 fw-bold text-body">Corclo</h3>
             <p className="text-muted small">
@@ -19,30 +14,25 @@ export default function Footer() {
             </p>
           </Col>
 
-          {/* Kolom 2: Product (Tautan Diperbaiki) */}
           <Col lg={2} md={4} xs={6}>
             <h5 className="fs-6 fw-semibold text-body mb-3">Product</h5>
             <ul className="list-unstyled d-flex flex-column gap-2">
               <li>
-                {/* 💡 Home (Sekarang merujuk ke '/') */}
                 <Link href="/" className="footer-link">
                   Home
                 </Link>
               </li>
               <li>
-                {/* 💡 About */}
                 <Link href="/about" className="footer-link">
                   About
                 </Link>
               </li>
               <li>
-                {/* 💡 Features */}
                 <Link href="/features" className="footer-link">
                   Features
                 </Link>
               </li>
               <li>
-                {/* 💡 Community */}
                 <Link href="/community" className="footer-link">
                   Community
                 </Link>
@@ -50,7 +40,6 @@ export default function Footer() {
             </ul>
           </Col>
 
-          {/* Kolom 3: Resources */}
           <Col lg={3} md={4} xs={6}>
             <h5 className="fs-6 fw-semibold text-body mb-3">Resources</h5>
             <ul className="list-unstyled d-flex flex-column gap-2">
@@ -72,7 +61,6 @@ export default function Footer() {
             </ul>
           </Col>
 
-          {/* Kolom 4: Legal */}
           <Col lg={3} md={4} xs={6}>
             <h5 className="fs-6 fw-semibold text-body mb-3">Legal</h5>
             <ul className="list-unstyled d-flex flex-column gap-2">
@@ -90,10 +78,8 @@ export default function Footer() {
           </Col>
         </Row>
 
-        {/* --- Garis Pemisah --- */}
         <hr className="mb-4" />
 
-        {/* --- Bagian BAWAH: Copyright & Socials --- */}
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-center">
           <div className="text-center text-md-start">
             <p className="text-muted small">
@@ -113,7 +99,6 @@ export default function Footer() {
           </div>
         </div>
       </Container>
-      {/* Catatan: <style jsx> sudah dihapus, style footer-link ada di global.css */}
     </footer>
   );
 }

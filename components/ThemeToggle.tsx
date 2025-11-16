@@ -1,15 +1,12 @@
-// components/ThemeToggle.tsx
 "use client";
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import * as React from "react";
-import { Button } from "react-bootstrap"; // Import Button
+import { Button } from "react-bootstrap";
 
 export function ThemeToggle() {
-  // 'theme' akan berisi 'light' atau 'dark'
-  // 'setTheme' akan mengatur 'data-bs-theme' berkat layout.tsx
-  const { theme, setTheme } = useTheme(); 
+  const { theme, setTheme } = useTheme();
   const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -17,7 +14,6 @@ export function ThemeToggle() {
   }, []);
 
   if (!isMounted) {
-    // Render placeholder
     return (
       <Button
         variant="outline-secondary"
@@ -33,8 +29,8 @@ export function ThemeToggle() {
 
   return (
     <Button
-      variant="outline-secondary" // Gunakan varian Bootstrap
-      className="rounded-circle"      // Buat jadi lingkaran
+      variant="outline-secondary"
+      className="rounded-circle"
       style={{ width: "40px", height: "40px", position: "relative" }}
       onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
       aria-label="Toggle theme"

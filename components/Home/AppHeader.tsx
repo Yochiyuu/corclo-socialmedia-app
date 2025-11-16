@@ -1,4 +1,3 @@
-// components/App/AppHeader.tsx
 "use client";
 
 import { Bell, Home, MessageSquare, User } from "lucide-react";
@@ -32,12 +31,10 @@ export default function AppHeader() {
       }}
     >
       <Container>
-        {/* Brand/Logo */}
         <Navbar.Brand as={Link} href="/home" className="fw-bold">
           Corclo
         </Navbar.Brand>
 
-        {/* Search Bar (di tengah) */}
         <div className="d-none d-md-flex flex-grow-1 justify-content-center px-4">
           <Form className="w-100" style={{ maxWidth: "400px" }}>
             <Form.Control
@@ -48,7 +45,6 @@ export default function AppHeader() {
           </Form>
         </div>
 
-        {/* Ikon Navigasi (di kanan) */}
         <Nav className="ms-auto d-flex flex-row align-items-center gap-3">
           <Nav.Link as={Link} href="/home" title="Home">
             <Home size={22} />

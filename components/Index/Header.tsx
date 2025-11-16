@@ -1,28 +1,23 @@
-// components/Index/Header.tsx
 "use client";
 
 import { useTheme } from "next-themes";
-// 💡 HAPUS: import Link dari "next/link" agar tidak mengganggu scrolling
 import React from "react";
 import { Button, Container, Nav, Navbar } from "react-bootstrap";
 import { ThemeToggle } from "../ThemeToggle";
 
-// --- Fungsi Scroll Mulus ---
 const handleScroll = (
   e: React.MouseEvent<HTMLElement, MouseEvent>,
   targetId: string
 ) => {
-  e.preventDefault(); // Mencegah perubahan URL yang kaku
+  e.preventDefault();
   const targetElement = document.getElementById(targetId);
   if (targetElement) {
-    // Scroll ke elemen target dengan efek mulus (smooth)
     window.scrollTo({
-      top: targetElement.offsetTop - 80, // Offset 80px untuk memberi ruang pada header yang fixed
+      top: targetElement.offsetTop - 80,
       behavior: "smooth",
     });
   }
 };
-// ----------------------------
 
 export default function Header() {
   const { theme } = useTheme();
@@ -43,12 +38,11 @@ export default function Header() {
         className="bg-transparent"
       >
         <Container>
-          {/* Brand/Logo: Scroll ke atas (Hero section) */}
           <Navbar.Brand
             as="a"
             href="#hero"
             className="ms-2"
-            onClick={(e) => handleScroll(e, "hero")} // Panggil fungsi scroll
+            onClick={(e) => handleScroll(e, "hero")}
           >
             Corclo
           </Navbar.Brand>
@@ -57,9 +51,6 @@ export default function Header() {
 
           <Navbar.Collapse id="main-navbar">
             <Nav className="ms-auto d-flex flex-row align-items-center">
-              {/* --- Link Navigasi --- */}
-              {/* 💡 UBAH: Gunakan anchor tag biasa ('a') dan tambahkan onClick */}
-
               <Nav.Link
                 as="a"
                 href="#hero"
@@ -89,17 +80,12 @@ export default function Header() {
                 Community
               </Nav.Link>
 
-              {/* --- 1. PEMBATAS / SEPARATOR --- */}
               <div className="vr mx-3" />
 
-              {/* --- Tombol Sign In / Sign Up (Tetap Gunakan Link Next.js untuk Navigasi Eksternal) --- */}
-
-              {/* Tombol Sign In */}
               <Nav.Link as="a" href="/sign-in">
                 Sign In
               </Nav.Link>
 
-              {/* Tombol Sign Up */}
               <Button
                 as="a"
                 href="/sign-up"
@@ -110,7 +96,6 @@ export default function Header() {
                 Sign Up
               </Button>
 
-              {/* --- Theme Toggle --- */}
               <div className="ms-3">
                 <ThemeToggle />
               </div>

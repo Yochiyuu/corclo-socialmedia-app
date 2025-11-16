@@ -1,6 +1,4 @@
-// components/Index/Features.tsx
 "use client";
-// Impor ikon yang dibutuhkan saja
 import { MessageSquare, Shield, Users } from "lucide-react";
 import { Card, Col, Container, Row } from "react-bootstrap";
 
@@ -8,7 +6,6 @@ export default function Features() {
   return (
     <section id="features" className="bg-body py-5">
       <Container style={{ maxWidth: "960px" }}>
-        {/* --- Judul Fokus --- */}
         <div className="text-center">
           <h2 className="display-5 fw-bold text-body">
             Built on Connection, Trust, and Chat
@@ -19,9 +16,7 @@ export default function Features() {
           </p>
         </div>
 
-        {/* --- 💡 LAYOUT RINGKAS: 1x3 Grid --- */}
         <Row className="mt-5 g-4">
-          {/* Fitur 1: Social Connection */}
           <Col md={4}>
             <Card className="border-0 p-3 feature-card-glass h-100">
               <Card.Body className="text-start">
@@ -42,7 +37,6 @@ export default function Features() {
             </Card>
           </Col>
 
-          {/* Fitur 2: Privacy & Security */}
           <Col md={4}>
             <Card className="border-0 p-3 feature-card-glass h-100">
               <Card.Body className="text-start">
@@ -63,7 +57,6 @@ export default function Features() {
             </Card>
           </Col>
 
-          {/* Fitur 3: Real-time Messaging */}
           <Col md={4}>
             <Card className="border-0 p-3 feature-card-glass h-100">
               <Card.Body className="text-start">
