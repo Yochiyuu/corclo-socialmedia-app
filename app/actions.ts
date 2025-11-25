@@ -2,8 +2,12 @@
 
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { existsSync } from "fs";
+import { mkdir, writeFile } from "fs/promises";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import path from "path";
 
 export type ActionState = {
   message: string;
@@ -99,6 +103,164 @@ export async function logout() {
 
 export async function createPost(formData: FormData) {
   const content = formData.get("content") as string;
+  const mediaFile = formData.get("media") as File;
+
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+
+  if (!userIdCookie) {
+    redirect("/login");
+  }
+
+  const authorId = parseInt(userIdCookie);
+
+  let mediaUrl = null;
+  let mediaType: "IMAGE" | "VIDEO" | null = null;
+
+  if (mediaFile && mediaFile.size > 0) {
+    try {
+      const buffer = Buffer.from(await mediaFile.arrayBuffer());
+
+      const safeName = mediaFile.name.replaceAll(" ", "_");
+      const filename = `${Date.now()}_${safeName}`;
+
+      const uploadDir = path.join(process.cwd(), "public/uploads");
+
+      if (!existsSync(uploadDir)) {
+        await mkdir(uploadDir, { recursive: true });
+      }
+
+      await writeFile(path.join(uploadDir, filename), buffer);
+
+      mediaUrl = `/uploads/${filename}`;
+
+      if (mediaFile.type.startsWith("image")) {
+        mediaType = "IMAGE";
+      } else if (mediaFile.type.startsWith("video")) {
+        mediaType = "VIDEO";
+      }
+    } catch (error) {
+      console.error("Gagal upload file:", error);
+    }
+  }
+
+  await prisma.post.create({
+    data: {
+      content: content || "",
+      authorId,
+      mediaUrl,
+      mediaType,
+    },
+  });
+
+  revalidatePath("/home");
+  const user = await prisma.user.findUnique({ where: { id: authorId } });
+  if (user) {
+    revalidatePath(`/profile/${user.username}`);
+  }
 
   redirect("/home");
+}
+
+export async function toggleLike(postId: number) {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+
+  if (!userIdCookie) return;
+  const userId = parseInt(userIdCookie);
+
+  try {
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      await prisma.like.delete({
+        where: { id: existingLike.id },
+      });
+    } else {
+      await prisma.like.create({
+        data: {
+          userId,
+          postId,
+        },
+      });
+    }
+
+    revalidatePath("/home");
+  } catch (error) {
+    console.error("Error toggling like:", error);
+  }
+}
+
+export async function addComment(postId: number, content: string) {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+
+  if (!userIdCookie || !content.trim()) return;
+
+  const userId = parseInt(userIdCookie);
+
+  try {
+    await prisma.comment.create({
+      data: {
+        content,
+        postId,
+        userId,
+      },
+    });
+
+    revalidatePath("/home");
+  } catch (error) {
+    console.error("Error adding comment:", error);
+  }
+}
+
+export async function toggleFollow(targetUserId: number) {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+
+  if (!userIdCookie) return;
+  const currentUserId = parseInt(userIdCookie);
+
+  if (currentUserId === targetUserId) return;
+
+  try {
+    const existingFollow = await prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: currentUserId,
+          followingId: targetUserId,
+        },
+      },
+    });
+
+    if (existingFollow) {
+      await prisma.follows.delete({
+        where: {
+          followerId_followingId: {
+            followerId: currentUserId,
+            followingId: targetUserId,
+          },
+        },
+      });
+    } else {
+      await prisma.follows.create({
+        data: {
+          followerId: currentUserId,
+          followingId: targetUserId,
+        },
+      });
+    }
+
+    revalidatePath("/home");
+    revalidatePath(`/profile/[username]`);
+  } catch (error) {
+    console.error("Error toggling follow:", error);
+  }
 }

@@ -9,35 +9,76 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Model untuk Tipe Media (Enum)
 enum MediaType {
   IMAGE
   VIDEO
 }
 
-// Model untuk Pengguna
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  email     String   @unique
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  email     String    @unique
   name      String
   password  String
   avatar    String?
-  createdAt DateTime @default(now())
-  posts     Post[] 
+  createdAt DateTime  @default(now())
+  
+  posts     Post[]
+  likes     Like[]
+  comments  Comment[]
+  
+  // Relasi Follow (Many-to-Many Self Relation)
+  followedBy Follows[] @relation("following") // Orang yang mem-follow user ini (Followers)
+  following  Follows[] @relation("follower")  // Orang yang di-follow user ini (Following)
 }
 
-// Model untuk Postingan
 model Post {
+  id        Int       @id @default(autoincrement())
+  content   String
+  createdAt DateTime  @default(now())
+  
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  Int
+
+  mediaType MediaType?
+  mediaUrl  String?
+
+  likes     Like[]
+  comments  Comment[]
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+
+  @@unique([userId, postId])
+}
+
+model Comment {
   id        Int      @id @default(autoincrement())
   content   String
   createdAt DateTime @default(now())
-  
-  // Relasi: Postingan ini dibuat oleh...
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
 
-  // Media (opsional)
-  mediaType MediaType?
-  mediaUrl  String?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+}
+
+// Model Follows
+model Follows {
+  follower    User @relation("follower", fields: [followerId], references: [id])
+  followerId  Int
+  
+  following   User @relation("following", fields: [followingId], references: [id])
+  followingId Int
+
+  @@id([followerId, followingId]) // Composite ID
 }

@@ -1,9 +1,7 @@
-import PostList from "@/components/Feed/PostList";
-import Header from "@/components/Index/Header";
+import HomeView from "@/components/Home/HomeView";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Col, Container, Row } from "react-bootstrap";
 
 export default async function HomePage() {
   const cookieStore = await cookies();
@@ -13,33 +11,53 @@ export default async function HomePage() {
     redirect("/login");
   }
 
+  const currentUserId = parseInt(userIdCookie);
+
+  const currentUser = await prisma.user.findUnique({
+    where: { id: currentUserId },
+    include: {
+      _count: {
+        select: {
+          posts: true,
+          followedBy: true,
+          following: true,
+        },
+      },
+    },
+  });
+
+  if (!currentUser) {
+    redirect("/login");
+  }
+
   const allPosts = await prisma.post.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       author: true,
+      likes: { select: { userId: true } },
+      comments: {
+        include: { user: { select: { username: true } } },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
+  const suggestions = await prisma.user.findMany({
+    where: {
+      id: { not: currentUserId },
+      followedBy: {
+        none: { followerId: currentUserId },
+      },
+    },
+    take: 3,
+  });
+
   return (
-    <main className="bg-black min-h-screen">
-      <Header />
-
-      <section className="pt-5 mt-5 pb-5">
-        <Container>
-          <Row className="justify-content-center">
-            <Col lg={6}>
-              <div className="mb-4">
-                <h3 className="fw-bold text-white">Home Feed</h3>
-                <p className="text-secondary">
-                  Update terbaru dari komunitasmu.
-                </p>
-              </div>
-
-              <PostList posts={allPosts} />
-            </Col>
-          </Row>
-        </Container>
-      </section>
-    </main>
+    <HomeView
+      currentUser={currentUser}
+      allPosts={allPosts}
+      currentUserId={currentUserId}
+      suggestions={suggestions}
+    />
   );
 }

@@ -9,42 +9,42 @@ export default function Features() {
       icon: Shield,
       title: "Secure by Design",
       desc: "Data kamu diamankan dengan enkripsi tingkat militer.",
-      color: "#10b981", // Emerald/Green
+      color: "#10b981",
       bg: "rgba(16, 185, 129, 0.1)",
     },
     {
       icon: Zap,
       title: "Lightning Fast",
       desc: "Loading instan berkat teknologi Next.js terbaru.",
-      color: "#8b5cf6", // Violet
+      color: "#8b5cf6",
       bg: "rgba(139, 92, 246, 0.1)",
     },
     {
       icon: Smile,
       title: "User Friendly",
       desc: "Antarmuka yang simpel, bersih, dan mudah digunakan.",
-      color: "#f59e0b", // Amber
+      color: "#f59e0b",
       bg: "rgba(245, 158, 11, 0.1)",
     },
     {
       icon: Smartphone,
       title: "Mobile First",
       desc: "Akses nyaman dari smartphone maupun desktop.",
-      color: "#ec4899", // Pink
+      color: "#ec4899",
       bg: "rgba(236, 72, 153, 0.1)",
     },
     {
       icon: Globe,
       title: "Global Reach",
       desc: "Server tersebar di seluruh dunia untuk akses cepat.",
-      color: "#3b82f6", // Blue
+      color: "#3b82f6",
       bg: "rgba(59, 130, 246, 0.1)",
     },
     {
       icon: Lock,
       title: "Privacy Focus",
       desc: "Kami tidak menjual data pribadimu ke pihak ketiga.",
-      color: "#ef4444", // Red
+      color: "#ef4444",
       bg: "rgba(239, 68, 68, 0.1)",
     },
   ];

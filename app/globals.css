@@ -1,6 +1,38 @@
 body {
-  background-color: #121212 !important;
+  background-color: #050505 !important;
   color: #e0e0e0 !important;
+}
+
+.text-secondary, .text-muted {
+  color: #a0a0a0 !important;
+}
+
+.text-body {
+  color: #e0e0e0 !important;
+}
+
+.card {
+  background-color: #121212 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+
+.form-control {
+  background-color: #1e1e1e !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+
+.form-control:focus {
+  background-color: #1e1e1e !important;
+  border-color: #7c3aed !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 0.25rem rgba(124, 58, 237, 0.25) !important;
+}
+
+.form-control::placeholder {
+  color: #888 !important;
+  opacity: 1;
 }
 
 ::-webkit-scrollbar {
@@ -8,11 +40,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: #050505;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #333;
   border-radius: 4px;
 }
 
@@ -20,29 +52,22 @@ body {
   background: #555;
 }
 
-.group-card-hover:hover {
-  transform: translateY(-5px);
-  border-color: rgba(124, 58, 237, 0.5) !important;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+.hover-bg-opacity:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
-.bg-gradient-community {
-  background-size: 200% 200%;
+.hover-text-white:hover {
+  color: #fff !important;
 }
 
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.cursor-pointer {
+  cursor: pointer;
 }
 
-.backdrop-blur {
-  backdrop-filter: blur(4px);
+a.text-primary:hover, .btn-link.text-primary:hover {
+  color: #a78bfa !important;
 }
 
-.sticky-lg-top-custom {
-  position: -webkit-sticky;
-  position: sticky;
-  top: 100px;
+.hover-underline:hover {
+  text-decoration: underline !important;
 }

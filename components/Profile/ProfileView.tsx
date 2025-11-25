@@ -1,31 +1,36 @@
 "use client";
 
-import { createPost, logout } from "@/app/actions";
+import { createPost, logout, toggleFollow } from "@/app/actions";
+import PostList, { PostWithRelations } from "@/components/Feed/PostList";
 import { Image as ImageIcon, X } from "lucide-react";
 import { useState } from "react";
 import { Button, Card, Container, Form, Image } from "react-bootstrap";
 import { useFormStatus } from "react-dom";
 
-type UserWithPosts = {
+type UserProfileData = {
+  id: number;
   name: string;
   username: string;
   email: string;
   avatar: string | null;
-  posts: {
-    id: number;
-    content: string;
-    createdAt: Date;
-    mediaUrl: string | null;
-    mediaType: "IMAGE" | "VIDEO" | null;
-  }[];
+  _count: {
+    posts: number;
+    followedBy: number;
+    following: number;
+  };
+  posts: any[];
 };
 
 export default function ProfileView({
   user,
   isOwnProfile,
+  currentUserId,
+  isFollowing,
 }: {
-  user: UserWithPosts;
+  user: UserProfileData;
   isOwnProfile: boolean;
+  currentUserId: number;
+  isFollowing?: boolean;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [fileType, setFileType] = useState<"image" | "video" | null>(null);
@@ -45,9 +50,17 @@ export default function ProfileView({
     if (input) input.value = "";
   };
 
+  const postsForList: PostWithRelations[] = user.posts.map((post: any) => ({
+    ...post,
+    author: {
+      name: user.name,
+      username: user.username,
+      avatar: user.avatar,
+    },
+  }));
+
   function TombolPosting() {
     const { pending } = useFormStatus();
-
     return (
       <Button
         type="submit"
@@ -55,15 +68,15 @@ export default function ProfileView({
         style={{ backgroundColor: "#7c3aed", border: "none" }}
         disabled={pending}
       >
-        {pending ? "Lagi Posting..." : "Posting"}
+        {pending ? "..." : "Posting"}
       </Button>
     );
   }
 
   return (
-    <section className="min-vh-100 py-5 bg-dark text-white">
+    <section className="min-vh-100 py-5 bg-black text-white">
       <Container>
-        <div className="d-flex align-items-center gap-4 mb-5 border-bottom border-secondary pb-4">
+        <div className="d-flex align-items-center gap-4 mb-5 border-bottom border-secondary border-opacity-25 pb-4">
           <Image
             src={user.avatar || "/images/default-avatar.png"}
             alt={user.name}
@@ -74,22 +87,50 @@ export default function ProfileView({
           />
           <div className="flex-grow-1">
             <h2 className="fw-bold mb-0">{user.name}</h2>
-            <p className="text-secondary mb-0">@{user.username}</p>
-            <p className="text-secondary small">{user.email}</p>
+            <p className="text-secondary mb-2">@{user.username}</p>
+
+            <div className="d-flex gap-4 mb-3">
+              <span>
+                <b>{user._count.posts}</b> Post
+              </span>
+              <span>
+                <b>{user._count.followedBy}</b> Followers
+              </span>
+              <span>
+                <b>{user._count.following}</b> Following
+              </span>
+            </div>
+
+            {!isOwnProfile && (
+              <Button
+                variant={isFollowing ? "outline-secondary" : "primary"}
+                size="sm"
+                onClick={() => toggleFollow(user.id)}
+                className="px-4 rounded-pill fw-bold"
+                style={
+                  !isFollowing
+                    ? { backgroundColor: "#7c3aed", border: "none" }
+                    : {}
+                }
+              >
+                {isFollowing ? "Unfollow" : "Follow"}
+              </Button>
+            )}
           </div>
 
           {isOwnProfile && (
-            <Button variant="outline-danger" size="sm" onClick={() => logout()}>
-              Logout
-            </Button>
+            <form action={logout}>
+              <Button variant="outline-danger" size="sm" type="submit">
+                Logout
+              </Button>
+            </form>
           )}
         </div>
 
         {isOwnProfile && (
-          <Card className="bg-secondary bg-opacity-10 border-0 rounded-4 mb-5">
+          <Card className="bg-dark border border-secondary border-opacity-25 rounded-4 mb-5">
             <Card.Body>
               <h5 className="fw-bold mb-3 text-white">Buat Postingan Baru</h5>
-
               <form action={createPost}>
                 <Form.Group className="mb-3">
                   <Form.Control
@@ -97,7 +138,7 @@ export default function ProfileView({
                     name="content"
                     rows={3}
                     placeholder="Apa yang sedang terjadi?"
-                    className="bg-dark text-white border-secondary mb-2"
+                    className="bg-black text-white border-secondary border-opacity-25 mb-2"
                     style={{ resize: "none" }}
                   />
                 </Form.Group>
@@ -116,31 +157,27 @@ export default function ProfileView({
                     {fileType === "image" ? (
                       <img
                         src={preview}
-                        alt="Preview"
                         className="rounded-3"
-                        style={{ maxHeight: "200px", maxWidth: "100%" }}
+                        style={{ maxHeight: "200px" }}
                       />
                     ) : (
                       <video
                         src={preview}
                         controls
                         className="rounded-3"
-                        style={{ maxHeight: "200px", maxWidth: "100%" }}
+                        style={{ maxHeight: "200px" }}
                       />
                     )}
                   </div>
                 )}
 
                 <div className="d-flex justify-content-between align-items-center pt-2 border-top border-secondary border-opacity-25">
-                  <div className="d-flex gap-2">
-                    <label
-                      htmlFor="mediaInput"
-                      className="btn btn-sm btn-dark border-secondary d-flex align-items-center gap-2 text-secondary"
-                      style={{ cursor: "pointer" }}
-                    >
-                      <ImageIcon size={18} className="text-success" /> Foto /
-                      Video
-                    </label>
+                  <label
+                    className="btn btn-sm btn-dark border-secondary border-opacity-25 d-flex align-items-center gap-2 text-secondary hover-text-white"
+                    style={{ cursor: "pointer" }}
+                  >
+                    <ImageIcon size={18} className="text-success" /> Foto /
+                    Video
                     <input
                       id="mediaInput"
                       type="file"
@@ -149,8 +186,7 @@ export default function ProfileView({
                       className="d-none"
                       onChange={handleFileChange}
                     />
-                  </div>
-
+                  </label>
                   <TombolPosting />
                 </div>
               </form>
@@ -161,51 +197,8 @@ export default function ProfileView({
         <h4 className="fw-bold mb-4">
           {isOwnProfile ? "Timeline Kamu" : `Postingan ${user.name}`}
         </h4>
-        <div className="d-flex flex-column gap-4">
-          {user.posts.map((post) => (
-            <Card
-              key={post.id}
-              className="bg-dark border border-secondary border-opacity-50 rounded-4 text-white shadow-sm"
-            >
-              <Card.Body>
-                <p className="mb-3 fs-5" style={{ whiteSpace: "pre-wrap" }}>
-                  {post.content}
-                </p>
 
-                {post.mediaUrl && (
-                  <div className="mb-3 rounded-3 overflow-hidden border border-secondary border-opacity-25">
-                    {post.mediaType === "IMAGE" ? (
-                      <img
-                        src={post.mediaUrl}
-                        alt="Post media"
-                        style={{
-                          width: "100%",
-                          maxHeight: "500px",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <video
-                        src={post.mediaUrl}
-                        controls
-                        style={{ width: "100%", maxHeight: "500px" }}
-                      />
-                    )}
-                  </div>
-                )}
-
-                <small className="text-secondary">
-                  Diposting pada {new Date(post.createdAt).toLocaleDateString()}
-                </small>
-              </Card.Body>
-            </Card>
-          ))}
-          {user.posts.length === 0 && (
-            <div className="text-center py-5 text-secondary border border-secondary border-opacity-10 rounded-4">
-              <p className="mb-0">Belum ada postingan.</p>
-            </div>
-          )}
-        </div>
+        <PostList posts={postsForList} currentUserId={currentUserId} />
       </Container>
     </section>
   );
