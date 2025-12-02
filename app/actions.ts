@@ -1,13 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { put } from "@vercel/blob";
 import bcrypt from "bcryptjs";
-import { existsSync } from "fs";
-import { mkdir, writeFile } from "fs/promises";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import path from "path";
 
 export type ActionState = {
   message: string;
@@ -119,20 +117,11 @@ export async function createPost(formData: FormData) {
 
   if (mediaFile && mediaFile.size > 0) {
     try {
-      const buffer = Buffer.from(await mediaFile.arrayBuffer());
+      const blob = await put(mediaFile.name, mediaFile, {
+        access: "public",
+      });
 
-      const safeName = mediaFile.name.replaceAll(" ", "_");
-      const filename = `${Date.now()}_${safeName}`;
-
-      const uploadDir = path.join(process.cwd(), "public/uploads");
-
-      if (!existsSync(uploadDir)) {
-        await mkdir(uploadDir, { recursive: true });
-      }
-
-      await writeFile(path.join(uploadDir, filename), buffer);
-
-      mediaUrl = `/uploads/${filename}`;
+      mediaUrl = blob.url;
 
       if (mediaFile.type.startsWith("image")) {
         mediaType = "IMAGE";
@@ -274,11 +263,11 @@ export async function searchUsers(query: string) {
     const users = await prisma.user.findMany({
       where: {
         OR: [
-          { name: { contains: query } }, // Hapus mode: 'insensitive' jika pakai SQLite standar, tapi biarkan jika Postgres
-          { username: { contains: query } },
+          { name: { contains: query, mode: "insensitive" } },
+          { username: { contains: query, mode: "insensitive" } },
         ],
       },
-      take: 5, // Batasi hasil pencarian maksimal 5 user
+      take: 5,
       select: {
         id: true,
         name: true,
