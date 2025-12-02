@@ -21,6 +21,7 @@ model User {
   name      String
   password  String
   avatar    String?
+  bio       String?
   createdAt DateTime  @default(now())
   
   posts     Post[]

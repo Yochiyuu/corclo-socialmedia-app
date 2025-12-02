@@ -6,8 +6,10 @@ export type PostWithRelations = {
   id: number;
   content: string;
   createdAt: Date;
+  updatedAt: Date;
   mediaUrl: string | null;
   mediaType: "IMAGE" | "VIDEO" | null;
+  authorId: number;
   author: {
     name: string;
     username: string;
@@ -19,6 +21,10 @@ export type PostWithRelations = {
     content: string;
     user: { username: string };
   }[];
+  _count?: {
+    likes: number;
+    comments: number;
+  };
 };
 
 export default function PostList({
@@ -30,14 +36,14 @@ export default function PostList({
 }) {
   if (!posts || posts.length === 0) {
     return (
-      <div className="text-center text-secondary py-5 bg-dark rounded-4">
-        <p className="mb-0">Belum ada postingan. Jadilah yang pertama!</p>
+      <div className="text-center text-secondary py-5 bg-dark bg-opacity-25 rounded-4 mt-3">
+        <p className="mb-0 fw-bold">Belum ada postingan.</p>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="d-flex flex-column gap-0">
       {posts.map((post) => (
         <PostItem key={post.id} post={post} currentUserId={currentUserId} />
       ))}

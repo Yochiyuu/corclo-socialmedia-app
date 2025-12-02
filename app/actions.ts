@@ -151,6 +151,34 @@ export async function createPost(formData: FormData) {
   redirect("/home");
 }
 
+export async function deletePost(postId: number) {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("userId")?.value;
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+  });
+
+  if (!post) {
+    throw new Error("Post not found");
+  }
+
+  if (post.authorId !== parseInt(userId)) {
+    throw new Error("Forbidden");
+  }
+
+  await prisma.post.delete({
+    where: { id: postId },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/home");
+}
+
 export async function toggleLike(postId: number) {
   const cookieStore = await cookies();
   const userIdCookie = cookieStore.get("userId")?.value;
@@ -279,5 +307,73 @@ export async function searchUsers(query: string) {
   } catch (error) {
     console.error("Search Error:", error);
     return [];
+  }
+}
+
+export async function updateProfile(formData: FormData) {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+
+  if (!userIdCookie) {
+    redirect("/login");
+  }
+
+  const userId = parseInt(userIdCookie);
+  const name = formData.get("name") as string;
+  const username = formData.get("username") as string;
+  const bio = formData.get("bio") as string;
+  const avatarFile = formData.get("avatar") as File;
+
+  if (!name || !username) {
+    throw new Error("Nama dan Username tidak boleh kosong");
+  }
+
+  const oldUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { username: true }
+  });
+
+  if (!oldUser) throw new Error("User tidak ditemukan");
+
+  let avatarUrl = undefined;
+
+  if (avatarFile && avatarFile.size > 0) {
+    try {
+      const filename = `avatar-${userId}-${Date.now()}-${avatarFile.name}`;
+      const blob = await put(filename, avatarFile, {
+        access: "public",
+      });
+      avatarUrl = blob.url;
+    } catch (error) {
+      console.error("Gagal upload avatar:", error);
+      throw new Error("Gagal mengupload gambar");
+    }
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name,
+        username,
+        bio,
+        ...(avatarUrl && { avatar: avatarUrl }),
+      },
+    });
+
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+       throw new Error("Username sudah digunakan orang lain!");
+    }
+    console.error("Update Profile Error:", error);
+    throw new Error("Gagal mengupdate profil");
+  }
+
+  if (oldUser.username !== username) {
+      revalidatePath(`/profile/${oldUser.username}`);
+      redirect(`/profile/${username}`);
+  } else {
+      revalidatePath(`/profile/${username}`);
+      revalidatePath("/home", "layout");
   }
 }

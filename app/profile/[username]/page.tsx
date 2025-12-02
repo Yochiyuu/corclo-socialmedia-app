@@ -14,9 +14,36 @@ export default async function UserProfilePage({ params }: Props) {
   const userIdCookie = cookieStore.get("userId")?.value;
   const currentUserId = userIdCookie ? parseInt(userIdCookie) : 0;
 
+  const postInclude = {
+    author: {
+      select: {
+        name: true,
+        username: true,
+        avatar: true,
+      },
+    },
+    likes: { select: { userId: true } },
+    comments: {
+      include: { user: { select: { username: true } } },
+      orderBy: { createdAt: "asc" as const }, 
+    },
+    _count: {
+      select: {
+        likes: true,
+        comments: true,
+      },
+    },
+  };
+
   const user = await prisma.user.findUnique({
     where: { username: username },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+      avatar: true,
+      bio: true,
       _count: {
         select: {
           posts: true,
@@ -30,11 +57,21 @@ export default async function UserProfilePage({ params }: Props) {
       },
       posts: {
         orderBy: { createdAt: "desc" },
+        include: postInclude,
+      },
+      likes: {
+        orderBy: { createdAt: "desc" },
         include: {
-          likes: { select: { userId: true } },
-          comments: {
-            include: { user: { select: { username: true } } },
-            orderBy: { createdAt: "asc" },
+          post: {
+            include: postInclude,
+          },
+        },
+      },
+      comments: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          post: {
+            include: postInclude,
           },
         },
       },

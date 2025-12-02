@@ -1,24 +1,43 @@
 "use client";
 
-import { addComment, toggleLike } from "@/app/actions";
+import { addComment, deletePost, toggleLike } from "@/app/actions";
+import { formatDistanceToNow } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import {
   Heart,
   MessageCircle,
   MoreHorizontal,
   Send,
   Share2,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { Button, Card, Form, Image, InputGroup } from "react-bootstrap";
+import React, { useState, useTransition } from "react";
+import { Button, Card, Dropdown, Form, Image, InputGroup } from "react-bootstrap";
+
+const CustomToggle = React.forwardRef(({ children, onClick }: any, ref: any) => (
+  <div
+    ref={ref}
+    onClick={(e) => {
+      e.preventDefault();
+      onClick(e);
+    }}
+    style={{ cursor: "pointer" }}
+    className="text-secondary p-0"
+  >
+    {children}
+  </div>
+));
+CustomToggle.displayName = "CustomToggle";
 
 type PostProps = {
   post: {
     id: number;
     content: string;
-    createdAt: Date;
+    createdAt: Date | string;
     mediaUrl: string | null;
     mediaType: "IMAGE" | "VIDEO" | null;
+    authorId: number;
     author: {
       name: string;
       username: string;
@@ -37,6 +56,7 @@ export default function PostItem({ post, currentUserId }: PostProps) {
   const [likeCount, setLikeCount] = useState(post.likes.length);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   const handleLike = async () => {
     const previousState = isLiked;
@@ -60,6 +80,25 @@ export default function PostItem({ post, currentUserId }: PostProps) {
     await addComment(post.id, commentText);
     setCommentText("");
   };
+
+  const handleDelete = () => {
+    const confirmDelete = window.confirm("Yakin ingin menghapus postingan ini?");
+    if (confirmDelete) {
+      startTransition(async () => {
+        try {
+          await deletePost(post.id);
+        } catch (error) {
+          console.error(error);
+          alert("Gagal menghapus postingan");
+        }
+      });
+    }
+  };
+
+  const dateObj = new Date(post.createdAt);
+  const timeAgo = !isNaN(dateObj.getTime())
+    ? formatDistanceToNow(dateObj, { addSuffix: true, locale: idLocale })
+    : "";
 
   return (
     <Card
@@ -91,14 +130,7 @@ export default function PostItem({ post, currentUserId }: PostProps) {
               </Link>
 
               <small className="text-secondary" style={{ fontSize: "12px" }}>
-                {new Date(post.createdAt).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}{" "}
-                WIB •
+                {timeAgo} •
                 <Link
                   href={`/profile/${post.author.username}`}
                   className="text-decoration-none text-secondary ms-1 hover-underline"
@@ -109,9 +141,31 @@ export default function PostItem({ post, currentUserId }: PostProps) {
             </div>
           </div>
 
-          <Button variant="link" className="text-secondary p-0">
-            <MoreHorizontal size={20} />
-          </Button>
+          <Dropdown align="end">
+            <Dropdown.Toggle as={CustomToggle}>
+              <Button variant="link" className="text-secondary p-0">
+                <MoreHorizontal size={20} />
+              </Button>
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu variant="dark" className="shadow-lg border border-secondary border-opacity-25">
+              {currentUserId === post.authorId ? (
+                <Dropdown.Item
+                  onClick={handleDelete}
+                  disabled={isPending}
+                  className="text-danger d-flex align-items-center gap-2 fw-bold"
+                >
+                  <Trash2 size={16} />
+                  {isPending ? "Menghapus..." : "Hapus Postingan"}
+                </Dropdown.Item>
+              ) : (
+                <>
+                  <Dropdown.Item className="small">Ikuti @{post.author.username}</Dropdown.Item>
+                  <Dropdown.Item className="small">Laporkan</Dropdown.Item>
+                </>
+              )}
+            </Dropdown.Menu>
+          </Dropdown>
         </div>
 
         {post.content && (
@@ -137,11 +191,9 @@ export default function PostItem({ post, currentUserId }: PostProps) {
                 src={post.mediaUrl}
                 className="w-100"
                 style={{ maxHeight: "500px" }}
-                autoPlay
-                loop
+                controls
                 muted
                 playsInline
-                controls
               />
             )}
           </div>
