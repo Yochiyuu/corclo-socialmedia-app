@@ -60,7 +60,7 @@ type HomeViewProps = {
     username: string;
     avatar: string | null;
   }[];
-  storySection: React.ReactNode; // Props baru
+  storySection: React.ReactNode;
 };
 
 export default function HomeView({

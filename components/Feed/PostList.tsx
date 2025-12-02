@@ -5,8 +5,7 @@ import PostItem from "./PostItem";
 export type PostWithRelations = {
   id: number;
   content: string;
-  createdAt: Date | string; // Ubah ke Date | string untuk kompatibilitas
-  // updatedAt: Date; <-- HAPUS BARIS INI karena tidak ada di schema.prisma
+  createdAt: Date | string; 
   mediaUrl: string | null;
   mediaType: "IMAGE" | "VIDEO" | null;
   authorId: number;

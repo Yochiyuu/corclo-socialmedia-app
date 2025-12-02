@@ -34,7 +34,7 @@ model User {
   // Relasi Chat
   conversations Conversation[] @relation("ConversationParticipants")
   messages      Message[]
-  messageLikes  MessageLike[] // Relasi baru untuk like pesan
+  messageLikes  MessageLike[]
 }
 
 model Story {
@@ -110,7 +110,7 @@ model Conversation {
 
 model Message {
   id             Int          @id @default(autoincrement())
-  content        String?      // Ubah jadi optional (?) agar bisa kirim gambar tanpa teks
+  content        String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   isEdited       Boolean      @default(false)
