@@ -1,3 +1,4 @@
+import StoryBar from "@/components/Feed/StoryBar";
 import HomeView from "@/components/Home/HomeView";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
@@ -13,6 +14,7 @@ export default async function HomePage() {
 
   const currentUserId = parseInt(userIdCookie);
 
+  // 1. Current User
   const currentUser = await prisma.user.findUnique({
     where: { id: currentUserId },
     include: {
@@ -30,6 +32,41 @@ export default async function HomePage() {
     redirect("/login");
   }
 
+  // 2. Fetch Users with Active Stories
+  const now = new Date();
+
+  // Ambil list ID following
+  const following = await prisma.follows.findMany({
+    where: { followerId: currentUserId },
+    select: { followingId: true },
+  });
+  const followingIds = following.map((f) => f.followingId);
+
+  // Masukkan user sendiri ke list untuk cek (meski story sendiri tidak masuk list teman, logikanya bisa dikembangkan)
+  const visibleUserIds = [...followingIds, currentUserId];
+
+  // Query user yang punya story aktif
+  const usersWithStories = await prisma.user.findMany({
+    where: {
+      id: { in: visibleUserIds },
+      stories: {
+        some: {
+          expiresAt: { gt: now },
+        },
+      },
+    },
+    select: {
+      id: true,
+      username: true,
+      avatar: true,
+    },
+    distinct: ["id"],
+  });
+
+  // Pisahkan story teman (exclude user sendiri karena ada tombol upload khusus)
+  const friendStories = usersWithStories.filter((u) => u.id !== currentUserId);
+
+  // 3. Fetch Posts
   const allPosts = await prisma.post.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -42,6 +79,7 @@ export default async function HomePage() {
     },
   });
 
+  // 4. Fetch Suggestions
   const suggestions = await prisma.user.findMany({
     where: {
       id: { not: currentUserId },
@@ -58,6 +96,13 @@ export default async function HomePage() {
       allPosts={allPosts}
       currentUserId={currentUserId}
       suggestions={suggestions}
+      // Pass component StoryBar sebagai props
+      storySection={
+        <StoryBar
+          currentUser={{ avatar: currentUser.avatar }}
+          usersWithStories={friendStories}
+        />
+      }
     />
   );
 }

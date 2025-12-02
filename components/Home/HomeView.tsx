@@ -60,6 +60,7 @@ type HomeViewProps = {
     username: string;
     avatar: string | null;
   }[];
+  storySection: React.ReactNode; // Props baru
 };
 
 export default function HomeView({
@@ -67,6 +68,7 @@ export default function HomeView({
   allPosts,
   currentUserId,
   suggestions,
+  storySection,
 }: HomeViewProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [fileType, setFileType] = useState<"image" | "video" | null>(null);
@@ -260,7 +262,7 @@ export default function HomeView({
                       },
                       { icon: Hash, label: "Explore", href: "#" },
                       { icon: Bell, label: "Notifications", href: "#" },
-                      { icon: MessageCircle, label: "Messages", href: "#" },
+                      { icon: MessageCircle, label: "Messages", href: "/messages" },
                       { icon: Bookmark, label: "Bookmarks", href: "#" },
                       {
                         icon: User,
@@ -308,6 +310,9 @@ export default function HomeView({
           </Col>
 
           <Col lg={6} md={12}>
+            {/* RENDER STORY DISINI */}
+            {storySection}
+
             <Card className="bg-dark border-0 rounded-4 mb-4 shadow-sm">
               <Card.Body className="p-3">
                 <form action={createPost}>
