@@ -12,6 +12,8 @@ export type ActionState = {
   success: boolean;
 } | null;
 
+// --- AUTH & USER ---
+
 export async function registerUser(
   prevState: ActionState,
   formData: FormData
@@ -98,6 +100,8 @@ export async function logout() {
   (await cookies()).delete("userId");
   redirect("/login");
 }
+
+// --- POSTS ---
 
 export async function createPost(formData: FormData) {
   const content = formData.get("content") as string;
@@ -238,6 +242,8 @@ export async function addComment(postId: number, content: string) {
   }
 }
 
+// --- SOCIAL ---
+
 export async function toggleFollow(targetUserId: number) {
   const cookieStore = await cookies();
   const userIdCookie = cookieStore.get("userId")?.value;
@@ -330,7 +336,7 @@ export async function updateProfile(formData: FormData) {
 
   const oldUser = await prisma.user.findUnique({
     where: { id: userId },
-    select: { username: true }
+    select: { username: true },
   });
 
   if (!oldUser) throw new Error("User tidak ditemukan");
@@ -360,20 +366,277 @@ export async function updateProfile(formData: FormData) {
         ...(avatarUrl && { avatar: avatarUrl }),
       },
     });
-
   } catch (error: any) {
-    if (error.code === 'P2002') {
-       throw new Error("Username sudah digunakan orang lain!");
+    if (error.code === "P2002") {
+      throw new Error("Username sudah digunakan orang lain!");
     }
     console.error("Update Profile Error:", error);
     throw new Error("Gagal mengupdate profil");
   }
 
   if (oldUser.username !== username) {
-      revalidatePath(`/profile/${oldUser.username}`);
-      redirect(`/profile/${username}`);
+    redirect(`/profile/${username}`);
   } else {
-      revalidatePath(`/profile/${username}`);
-      revalidatePath("/home", "layout");
+    revalidatePath(`/profile/${username}`);
   }
+}
+
+// --- STORIES ---
+
+export async function createStory(formData: FormData) {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+
+  if (!userIdCookie) {
+    redirect("/login");
+  }
+
+  const userId = parseInt(userIdCookie);
+  const mediaFile = formData.get("media") as File;
+
+  if (!mediaFile || mediaFile.size === 0) {
+    throw new Error("File story tidak boleh kosong");
+  }
+
+  let mediaUrl = "";
+  let mediaType: "IMAGE" | "VIDEO" = "IMAGE";
+
+  try {
+    const filename = `story-${userId}-${Date.now()}-${mediaFile.name}`;
+    const blob = await put(filename, mediaFile, {
+      access: "public",
+    });
+    mediaUrl = blob.url;
+
+    if (mediaFile.type.startsWith("video")) {
+      mediaType = "VIDEO";
+    }
+  } catch (error) {
+    console.error("Gagal upload story:", error);
+    throw new Error("Gagal mengupload story");
+  }
+
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await prisma.story.create({
+    data: {
+      mediaUrl,
+      mediaType,
+      expiresAt,
+      userId,
+    },
+  });
+
+  revalidatePath("/home");
+  redirect("/home");
+}
+
+// 1. Ambil Daftar Chat
+export async function getConversations() {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+  if (!userIdCookie) return [];
+
+  const userId = parseInt(userIdCookie);
+
+  return await prisma.conversation.findMany({
+    where: {
+      participants: {
+        some: { id: userId },
+      },
+    },
+    include: {
+      participants: {
+        where: { id: { not: userId } },
+        select: { id: true, username: true, name: true, avatar: true },
+      },
+      messages: {
+        take: 1,
+        orderBy: { createdAt: "desc" },
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
+// 2. Ambil Pesan berdasarkan USERNAME lawan bicara
+export async function getMessagesByUsername(targetUsername: string) {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+  if (!userIdCookie) return null;
+
+  const currentUserId = parseInt(userIdCookie);
+
+  // Cari user target
+  const targetUser = await prisma.user.findUnique({
+    where: { username: targetUsername },
+  });
+
+  if (!targetUser) return null;
+
+  const conversation = await prisma.conversation.findFirst({
+    where: {
+      AND: [
+        { participants: { some: { id: currentUserId } } },
+        { participants: { some: { id: targetUser.id } } },
+      ],
+    },
+    include: {
+      messages: {
+        include: {
+          sender: { select: { id: true, username: true, avatar: true } },
+          likes: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
+      participants: {
+        select: { id: true, username: true, name: true, avatar: true },
+      },
+    },
+  });
+
+  return { conversation, targetUser };
+}
+
+// 3. Start Conversation (Redirect ke Username)
+export async function startConversation(targetUserId: number) {
+  const cookieStore = await cookies();
+  const currentUserId = parseInt(cookieStore.get("userId")?.value || "0");
+  if (!currentUserId) return;
+
+  const existingConv = await prisma.conversation.findFirst({
+    where: {
+      AND: [
+        { participants: { some: { id: currentUserId } } },
+        { participants: { some: { id: targetUserId } } },
+      ],
+    },
+    include: { participants: true },
+  });
+
+  let targetUsername = "";
+
+  if (existingConv) {
+    const otherUser = existingConv.participants.find(
+      (p) => p.id === targetUserId
+    );
+    targetUsername = otherUser?.username || "";
+  } else {
+    const newConv = await prisma.conversation.create({
+      data: {
+        participants: {
+          connect: [{ id: currentUserId }, { id: targetUserId }],
+        },
+      },
+      include: { participants: true },
+    });
+    const otherUser = newConv.participants.find((p) => p.id === targetUserId);
+    targetUsername = otherUser?.username || "";
+  }
+
+  if (targetUsername) {
+    redirect(`/messages/${targetUsername}`);
+  }
+}
+
+// 4. Kirim Pesan (Text + Media)
+export async function sendMessage(formData: FormData) {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("userId")?.value;
+  if (!userId) return;
+
+  const conversationIdIdStr = formData.get("conversationId") as string;
+  const content = formData.get("content") as string;
+  const mediaFile = formData.get("media") as File;
+
+  if (!conversationIdIdStr) return;
+  const conversationId = parseInt(conversationIdIdStr);
+
+  const hasContent = content && content.trim().length > 0;
+  const hasMedia = mediaFile && mediaFile.size > 0;
+
+  if (!hasContent && !hasMedia) return;
+
+  let mediaUrl = null;
+  let mediaType: "IMAGE" | "VIDEO" | null = null;
+
+  if (hasMedia) {
+    try {
+      const filename = `chat-${userId}-${Date.now()}-${mediaFile.name}`;
+      const blob = await put(filename, mediaFile, { access: "public" });
+      mediaUrl = blob.url;
+      mediaType = mediaFile.type.startsWith("video") ? "VIDEO" : "IMAGE";
+    } catch (error) {
+      console.error("Gagal upload media chat:", error);
+    }
+  }
+
+  await prisma.message.create({
+    data: {
+      content: hasContent ? content : null,
+      conversationId,
+      senderId: parseInt(userId),
+      mediaUrl,
+      mediaType,
+    },
+  });
+
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: { updatedAt: new Date() },
+  });
+  revalidatePath("/messages");
+  revalidatePath("/messages/[username]");
+}
+
+// 5. Edit Pesan
+export async function editMessage(messageId: number, newContent: string) {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("userId")?.value;
+  if (!userId || !newContent.trim()) return;
+
+  const msg = await prisma.message.findUnique({ where: { id: messageId } });
+  if (!msg || msg.senderId !== parseInt(userId)) {
+    throw new Error("Unauthorized");
+  }
+
+  await prisma.message.update({
+    where: { id: messageId },
+    data: { content: newContent, isEdited: true },
+  });
+
+  revalidatePath("/messages");
+}
+
+// 6. Delete Pesan
+export async function deleteMessage(messageId: number) {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("userId")?.value;
+  if (!userId) return;
+
+  const msg = await prisma.message.findUnique({ where: { id: messageId } });
+  if (!msg || msg.senderId !== parseInt(userId)) {
+    throw new Error("Unauthorized");
+  }
+
+  await prisma.message.delete({ where: { id: messageId } });
+  revalidatePath("/messages");
+}
+
+// 7. Like Pesan
+export async function toggleMessageLike(messageId: number) {
+  const cookieStore = await cookies();
+  const userId = parseInt(cookieStore.get("userId")?.value || "0");
+  if (!userId) return;
+
+  const existing = await prisma.messageLike.findUnique({
+    where: { userId_messageId: { userId, messageId } },
+  });
+
+  if (existing) {
+    await prisma.messageLike.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.messageLike.create({ data: { userId, messageId } });
+  }
+  revalidatePath("/messages");
 }
