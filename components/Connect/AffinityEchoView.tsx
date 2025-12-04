@@ -1,6 +1,5 @@
 "use client";
 
-import AppSidebar from "@/components/Layout/AppSidebar";
 import { Zap } from "lucide-react";
 import Link from "next/link";
 import { Container, Row, Col, Card, Image, Badge } from "react-bootstrap";
@@ -26,46 +25,32 @@ export default function AffinityEchoView({
 }) {
     return (
         <Container className="py-4">
-            <Row className="g-4">
-                <Col lg={3} className="d-none d-lg-block">
-                    <div className="sticky-top" style={{ top: "90px" }}>
-                        <AppSidebar currentUser={currentUser} activePage="connect" />
-                    </div>
-                </Col>
-
-                <Col lg={9} md={12}>
-                    <h2 className="fw-bold mb-4 d-flex align-items-center gap-2">
+            <Row className="g-4 justify-content-center">
+                
+                <Col lg={10} md={12}>
+                    <h2 className="fw-bold mb-4 d-flex align-items-center gap-2 border-bottom border-secondary border-opacity-25 pb-3">
                         <Zap size={32} className="text-warning" /> Affinity Echo (Gema Afinitas)
                     </h2>
                     <p className="text-secondary lead mb-5">
-                        Temukan koneksi otentik berdasarkan interaksi dan minat bersama. Mekanisme ini anti-swipe dan anti-algoritma dangkal.
+                        Temukan koneksi otentik berdasarkan interaksi dan minat bersama. Desain anti-algoritma.
                     </p>
 
                     <Row className="g-4">
                         {affinitySuggestions.map((user) => (
                             <Col md={6} lg={4} key={user.id}>
-                                <Card className="h-100 border-0 rounded-4 shadow-lg bg-dark text-center position-relative overflow-hidden">
+                                <Card className="h-100 border-secondary border-opacity-25 rounded-4 shadow-lg bg-dark text-center position-relative overflow-hidden">
                                     
                                     {/* Affinity Visualizer */}
-                                    <div className="p-4 bg-black position-relative">
+                                    <div className="p-4 bg-dark position-relative" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                                         {/* Gema Ungu (Proximity/Mutuals) */}
                                         <div 
-                                            className="rounded-circle position-absolute top-50 start-50 translate-middle"
+                                            className="rounded-circle position-absolute top-50 start-50 translate-middle animate-pulse-slow"
                                             style={{ 
-                                                width: `${100 + user.mutualFollowers * 20}px`, 
-                                                height: `${100 + user.mutualFollowers * 20}px`, 
-                                                backgroundColor: 'rgba(124, 58, 237, 0.1)', // Warna Ungu
+                                                width: `${80 + user.mutualFollowers * 30}px`,
+                                                height: `${80 + user.mutualFollowers * 30}px`, 
+                                                backgroundColor: 'rgba(124, 58, 237, 0.1)', 
+                                                transition: 'all 0.5s ease',
                                                 zIndex: 1
-                                            }}
-                                        />
-                                        {/* Gema Hijau (Affinity/Groups) */}
-                                        <div 
-                                            className="rounded-circle position-absolute top-50 start-50 translate-middle"
-                                            style={{ 
-                                                width: `${110 + user.mutualGroups * 10}px`, 
-                                                height: `${110 + user.mutualGroups * 10}px`, 
-                                                backgroundColor: 'rgba(16, 185, 129, 0.1)', // Warna Hijau
-                                                zIndex: 0
                                             }}
                                         />
 
@@ -73,10 +58,10 @@ export default function AffinityEchoView({
                                         <Image
                                             src={user.avatar || "/images/default-avatar.png"}
                                             roundedCircle
-                                            width={90}
-                                            height={90}
+                                            width={100}
+                                            height={100}
                                             className="bg-black mb-3 position-relative"
-                                            style={{ objectFit: "cover", border: "3px solid #7c3aed", zIndex: 2 }}
+                                            style={{ objectFit: "cover", border: "4px solid #7c3aed", zIndex: 2 }}
                                         />
                                         
                                         <Link href={`/profile/${user.username}`} className="text-decoration-none">
@@ -85,11 +70,11 @@ export default function AffinityEchoView({
                                         <small className="text-secondary">@{user.username}</small>
                                     </div>
 
-                                    <Card.Body className="pt-0">
+                                    <Card.Body className="pt-3">
                                         <div className="mb-3">
-                                            <small className="d-block text-warning fw-bold mb-1">Affinity Score: {(user.affinityScore * 100).toFixed(0)}%</small>
-                                            <Badge bg="primary" className="me-2">{user.mutualFollowers} Mutuals</Badge>
-                                            <Badge bg="success">{user.mutualGroups} Shared Circles</Badge>
+                                            <small className="d-block text-warning fw-bold mb-2">Affinity Score: {(user.affinityScore * 100).toFixed(0)}%</small>
+                                            <Badge pill bg="primary" className="me-2 px-3 py-2 fw-normal">{user.mutualFollowers} Mutuals</Badge>
+                                            <Badge pill bg="success" className="px-3 py-2 fw-normal">{user.mutualGroups} Shared Circles</Badge>
                                         </div>
                                         
                                         <AffinityPingForm targetUserId={user.id} />
