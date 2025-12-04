@@ -5,146 +5,189 @@ import { prisma } from "@/lib/prisma";
 import AppHeader from "@/components/Layout/AppHeader";
 import DataAutonomyDashboard from "@/components/Settings/DataAutonomyDashboard";
 import SettingsActionItem from "@/components/Settings/SettingsActionItem";
-import { Container, Row, Col, Card, Button, ListGroup, Form } from "react-bootstrap";
-import { Shield, ChevronRight, Settings, Bell} from "lucide-react";
+import { Container, Row, Col, Card, Button, ListGroup, Nav } from "react-bootstrap";
+import { Shield, ChevronRight, Settings, Bell, User, Lock, LogOut, Activity } from "lucide-react";
 import Link from "next/link";
 
 async function getSettingsData(currentUserId: number) {
-    const feedLogs = await fetchFeedLog(); 
+    const feedLogs = await fetchFeedLog();
     const totalViews = feedLogs.length;
-    
+
     const interactionLogs = await (prisma as any).userEngagementLog.count({
-        where: { 
-            actorId: currentUserId, 
-            type: { in: ['LIKE', 'COMMENT'] } 
+        where: {
+            actorId: currentUserId,
+            type: { in: ['LIKE', 'COMMENT'] }
         }
     });
 
     const uniquePostsViewed = new Set(feedLogs.map(log => log.targetPost?.id).filter(id => id !== undefined)).size;
     const attentionRatio = uniquePostsViewed > 0 ? (interactionLogs / uniquePostsViewed) * 100 : 0;
-    
+
     return { feedLogs, totalViews, attentionRatio, interactionLogs };
 }
 
 export default async function SettingsPage({ searchParams }: { searchParams: { view?: string } }) {
-  const cookieStore = await cookies();
-  const userIdCookie = cookieStore.get("userId")?.value;
-  
-  if (!userIdCookie) redirect("/login");
+    const cookieStore = await cookies();
+    const userIdCookie = cookieStore.get("userId")?.value;
 
-  const currentUserId = parseInt(userIdCookie);
-  const currentUser = await prisma.user.findUnique({
-    where: { id: currentUserId },
-    select: { username: true, avatar: true, name: true },
-  });
+    if (!userIdCookie) redirect("/login");
 
-  if (!currentUser) redirect("/login");
-  
-  const resolvedSearchParams = await (searchParams as any);
-  const viewParam = resolvedSearchParams.view;
-  
-  let dashboardData = null;
+    const currentUserId = parseInt(userIdCookie);
+    const currentUser = await prisma.user.findUnique({
+        where: { id: currentUserId },
+        select: { username: true, avatar: true, name: true },
+    });
 
-  if (viewParam === 'dashboard') {
-    dashboardData = await getSettingsData(currentUserId);
-  }
+    if (!currentUser) redirect("/login");
 
-  const BackLink = ({ target }: { target: string }) => (
-    <Link href={target} className="text-secondary small d-inline-flex align-items-center text-decoration-none hover-text-primary mb-4">
-        <ChevronRight size={16} style={{ transform: 'rotate(180deg)' }} /> Kembali ke {target === '/home' ? 'Home' : 'Pengaturan'}
-    </Link>
-  );
+    const resolvedSearchParams = await (searchParams as any);
+    const viewParam = resolvedSearchParams.view || 'general';
 
-  return (
-    <>
-      <AppHeader currentUser={currentUser} />
-      <Container className="py-4">
-        <Row className="g-4 justify-content-center">
-            <Col lg={8} md={12}>
-                {/* --- BACK TO HOME LINK --- */}
-                {viewParam ? (
-                    <BackLink target="/settings" />
-                ) : (
-                    <div className="mb-4">
-                        <BackLink target="/home" />
-                    </div>
-                )}
+    let dashboardData = null;
 
-                {/* --- Dynamic Content Rendering --- */}
-                {viewParam === 'dashboard' ? (
-                    // DASHBOARD
-                    <div className="mb-4">
-                        {dashboardData && <DataAutonomyDashboard {...dashboardData} />}
-                    </div>
-                ) : viewParam === 'privacy' ? (
-                    // PRIVASI & KEAMANAN
-                    <div className="mb-4">
-                        <h2 className="fw-bold mb-4 d-flex align-items-center gap-2"><Shield size={32} className="text-success" /> Privasi & Keamanan</h2>
-                        <Card className="bg-dark border-secondary border-opacity-25">
-                            <ListGroup variant="flush">
-                                <SettingsActionItem href="#" text="Mode Akun Privat" isSwitch={true} />
-                                <SettingsActionItem href="#" text="Tampilkan Status Aktif" isSwitch={true} />
-                                <SettingsActionItem href="#" text="Izinkan Pesan dari Siapa Saja" isSwitch={true} />
-                                <SettingsActionItem href="#" text="Kelola Daftar Blokir" />
-                                <SettingsActionItem href="#" text="History Log In" />
-                            </ListGroup>
-                        </Card>
-                    </div>
-                ) : viewParam === 'notifications' ? (
-                    // NOTIFIKASI
-                    <div className="mb-4">
-                        <h2 className="fw-bold mb-4 d-flex align-items-center gap-2"><Bell size={32} className="text-info" /> Pengaturan Notifikasi</h2>
-                        <Card className="bg-dark border-secondary border-opacity-25">
-                            <ListGroup variant="flush">
-                                <SettingsActionItem href="#" text="Notifikasi Postingan Baru" isSwitch={true} />
-                                <SettingsActionItem href="#" text="Notifikasi Komentar & Likes" isSwitch={true} />
-                                <SettingsActionItem href="#" text="Notifikasi Pesan Langsung" isSwitch={true} />
-                                <SettingsActionItem href="#" text="Notifikasi Email" isSwitch={true} />
-                            </ListGroup>
-                        </Card>
-                    </div>
-                ) : (
-                    // SETTINGS HUB (DEFAULT) - TAMPILAN UTAMA
-                    <>
-                        <h2 className="fw-bold mb-4 d-flex align-items-center gap-2">
-                            <Settings size={32} className="text-primary" /> Pengaturan Akun
-                        </h2>
-                        
-                        <Card 
-                            className="mb-4 rounded-4 shadow-lg"
-                            style={{ 
-                                background: "rgba(33, 37, 41, 0.9)",
-                                border: '1px solid rgba(124, 58, 237, 0.5)',
-                            }}
-                        >
-                            <ListGroup variant="flush">
-                                {/* Navigasi Kategori */}
-                                <SettingsActionItem href="/settings?view=privacy" text="Privasi & Keamanan" variant="secondary" />
-                                <SettingsActionItem href="/settings?view=notifications" text="Notifikasi" variant="secondary" />
-                                
-                                {/* Dasbor Otonomi */}
-                                <Link href="/settings?view=dashboard" className="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center py-3 hover-bg-opacity border-secondary border-opacity-10">
-                                    <span className="fw-bold d-flex align-items-center gap-2">
-                                        <Shield size={20} className="text-success"/> Dasbor Otonomi Data
-                                    </span>
-                                    <Button variant="outline-success" size="sm" className="rounded-pill fw-bold">Lihat</Button>
+    if (viewParam === 'dashboard') {
+        dashboardData = await getSettingsData(currentUserId);
+    }
+
+    const SidebarItem = ({ href, icon: Icon, label, active }: { href: string, icon: any, label: string, active: boolean }) => (
+        <Link href={href} className={`d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none mb-2 transition-all ${active ? 'bg-primary bg-opacity-25 text-white border border-primary border-opacity-25' : 'text-secondary hover-bg-opacity hover-text-white'}`}>
+            <Icon size={20} className={active ? 'text-primary' : ''} />
+            <span className="fw-medium">{label}</span>
+            {active && <ChevronRight size={16} className="ms-auto text-primary" />}
+        </Link>
+    );
+
+    return (
+        <div className="min-vh-100 text-white" style={{ background: '#050505' }}>
+            <AppHeader currentUser={currentUser} />
+
+            {/* Background Glow */}
+            <div style={{
+                position: 'fixed',
+                top: '50%',
+                left: '0',
+                width: '500px',
+                height: '500px',
+                background: 'radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(0,0,0,0) 70%)',
+                borderRadius: '50%',
+                filter: 'blur(80px)',
+                zIndex: 0,
+                pointerEvents: 'none',
+                transform: 'translate(-50%, -50%)'
+            }} />
+
+            <Container className="py-5 position-relative" style={{ zIndex: 1 }}>
+                <div className="mb-4">
+                    <Link href="/home" className="text-secondary small d-inline-flex align-items-center text-decoration-none hover-text-primary mb-3">
+                        <ChevronRight size={16} style={{ transform: 'rotate(180deg)' }} /> Kembali ke Home
+                    </Link>
+                    <h2 className="fw-bold d-flex align-items-center gap-3">
+                        <Settings size={32} className="text-primary" />
+                        <span className="text-gradient-primary">Pengaturan Akun</span>
+                    </h2>
+                </div>
+
+                <Row className="g-4">
+                    {/* SIDEBAR NAVIGATION */}
+                    <Col lg={3} md={4}>
+                        <div className="glass-card p-3 rounded-4 sticky-top" style={{ top: '100px' }}>
+                            <div className="d-flex flex-column">
+                                <SidebarItem href="/settings?view=general" icon={User} label="Umum" active={viewParam === 'general'} />
+                                <SidebarItem href="/settings?view=privacy" icon={Lock} label="Privasi & Keamanan" active={viewParam === 'privacy'} />
+                                <SidebarItem href="/settings?view=notifications" icon={Bell} label="Notifikasi" active={viewParam === 'notifications'} />
+                                <SidebarItem href="/settings?view=dashboard" icon={Activity} label="Dasbor Otonomi" active={viewParam === 'dashboard'} />
+
+                                <hr className="border-secondary border-opacity-25 my-3" />
+
+                                <Link href="#" className="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none text-danger hover-bg-opacity">
+                                    <LogOut size={20} />
+                                    <span className="fw-medium">Log Out</span>
                                 </Link>
-                            </ListGroup>
-                        </Card>
+                            </div>
+                        </div>
+                    </Col>
 
-                        <Card className="mb-3 bg-dark border-secondary border-opacity-25 rounded-4 shadow-lg">
-                             <ListGroup variant="flush">
-                                {/* Aksi Akun */}
-                                <SettingsActionItem href="/profile/edit" text="Edit Profil" variant="secondary" />
-                                <SettingsActionItem href="#" text="Hapus Akun" isDanger={true} />
-                                <SettingsActionItem href="#" text="Log Out" isDanger={true} isLogout={true} /> 
-                            </ListGroup>
-                        </Card>
-                    </>
-                )}
-            </Col>
-        </Row>
-      </Container>
-    </>
-  );
+                    {/* CONTENT AREA */}
+                    <Col lg={9} md={8}>
+                        <div className="glass-card p-4 rounded-4 min-vh-50">
+                            {viewParam === 'dashboard' ? (
+                                // DASHBOARD
+                                <div>
+                                    <div className="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom border-secondary border-opacity-25">
+                                        <h4 className="fw-bold mb-0 d-flex align-items-center gap-2">
+                                            <Activity size={24} className="text-success" /> Dasbor Otonomi Data
+                                        </h4>
+                                        <span className="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">Live Data</span>
+                                    </div>
+                                    {dashboardData && <DataAutonomyDashboard {...dashboardData} />}
+                                </div>
+                            ) : viewParam === 'privacy' ? (
+                                // PRIVASI & KEAMANAN
+                                <div>
+                                    <h4 className="fw-bold mb-4 pb-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+                                        <Lock size={24} className="text-warning" /> Privasi & Keamanan
+                                    </h4>
+                                    <ListGroup variant="flush" className="bg-transparent">
+                                        <SettingsActionItem href="#" text="Mode Akun Privat" isSwitch={true} />
+                                        <SettingsActionItem href="#" text="Tampilkan Status Aktif" isSwitch={true} />
+                                        <SettingsActionItem href="#" text="Izinkan Pesan dari Siapa Saja" isSwitch={true} />
+                                        <SettingsActionItem href="#" text="Kelola Daftar Blokir" />
+                                        <SettingsActionItem href="#" text="History Log In" />
+                                    </ListGroup>
+                                </div>
+                            ) : viewParam === 'notifications' ? (
+                                // NOTIFIKASI
+                                <div>
+                                    <h4 className="fw-bold mb-4 pb-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+                                        <Bell size={24} className="text-info" /> Pengaturan Notifikasi
+                                    </h4>
+                                    <ListGroup variant="flush" className="bg-transparent">
+                                        <SettingsActionItem href="#" text="Notifikasi Postingan Baru" isSwitch={true} />
+                                        <SettingsActionItem href="#" text="Notifikasi Komentar & Likes" isSwitch={true} />
+                                        <SettingsActionItem href="#" text="Notifikasi Pesan Langsung" isSwitch={true} />
+                                        <SettingsActionItem href="#" text="Notifikasi Email" isSwitch={true} />
+                                    </ListGroup>
+                                </div>
+                            ) : (
+                                // GENERAL (DEFAULT)
+                                <div>
+                                    <h4 className="fw-bold mb-4 pb-3 border-bottom border-secondary border-opacity-25 d-flex align-items-center gap-2">
+                                        <User size={24} className="text-primary" /> Pengaturan Umum
+                                    </h4>
+
+                                    <div className="mb-4 text-center p-4 rounded-4 bg-dark bg-opacity-50 border border-secondary border-opacity-10">
+                                        <div className="d-inline-block position-relative mb-3">
+                                            <img
+                                                src={currentUser.avatar || '/images/default-avatar.png'}
+                                                alt="Profile"
+                                                className="rounded-circle border border-2 border-primary shadow-lg"
+                                                width={100}
+                                                height={100}
+                                                style={{ objectFit: 'cover' }}
+                                            />
+                                            <Button size="sm" variant="primary" className="position-absolute bottom-0 end-0 rounded-circle p-2 border border-dark">
+                                                <Settings size={14} />
+                                            </Button>
+                                        </div>
+                                        <h5 className="fw-bold mb-1">{currentUser.name}</h5>
+                                        <p className="text-secondary small">@{currentUser.username}</p>
+                                        <Button href="/profile/edit" variant="outline-light" size="sm" className="rounded-pill px-4 mt-2">Edit Profil</Button>
+                                    </div>
+
+                                    <ListGroup variant="flush" className="bg-transparent">
+                                        <SettingsActionItem href="/profile/edit" text="Edit Informasi Profil" variant="secondary" />
+                                        <SettingsActionItem href="#" text="Ubah Kata Sandi" variant="secondary" />
+                                        <SettingsActionItem href="#" text="Bahasa & Wilayah" variant="secondary" />
+                                        <div className="mt-4 pt-3 border-top border-secondary border-opacity-25">
+                                            <SettingsActionItem href="#" text="Hapus Akun Permanen" isDanger={true} />
+                                        </div>
+                                    </ListGroup>
+                                </div>
+                            )}
+                        </div>
+                    </Col>
+                </Row>
+            </Container>
+        </div>
+    );
 }

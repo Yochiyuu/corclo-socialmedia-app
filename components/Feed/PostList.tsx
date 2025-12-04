@@ -5,7 +5,7 @@ import PostItem from "./PostItem";
 export type PostWithRelations = {
   id: number;
   content: string;
-  createdAt: Date | string; 
+  createdAt: Date | string;
   mediaUrl: string | null;
   mediaType: "IMAGE" | "VIDEO" | null;
   authorId: number;
@@ -20,6 +20,7 @@ export type PostWithRelations = {
     content: string;
     user: { username: string };
   }[];
+  bookmarks: { userId: number }[];
   _count?: {
     likes: number;
     comments: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Hash, Home, MessageCircle, Settings, User } from "lucide-react";
+import { Hash, Home, MessageCircle, Settings, User, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -13,7 +13,8 @@ export default function BottomNav({
 
   const navItems = [
     { icon: Home, href: "/home", active: pathname === "/home" },
-    { icon: Hash, href: "#", active: false },
+    { icon: Hash, href: "/explore", active: pathname.includes("/explore") }, 
+    { icon: Zap, href: "/connect/echo", active: pathname.includes("/connect/echo") },
     {
       icon: MessageCircle,
       href: "/messages",

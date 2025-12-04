@@ -14,6 +14,7 @@ import {
   Settings,
   User,
   X,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -260,10 +261,11 @@ export default function HomeView({
                         href: "/home",
                         active: true,
                       },
-                      { icon: Hash, label: "Explore", href: "/explore" },
+                      { icon: Hash, label: "Explore", href: "/explore" }, 
                       { icon: Bell, label: "Notifications", href: "#" },
+                      { icon: Zap, label: "Connect", href: "/connect/echo" },
                       { icon: MessageCircle, label: "Messages", href: "/messages" },
-                      { icon: Bookmark, label: "Bookmarks", href: "/bookmarks" },
+                      { icon: Bookmark, label: "Bookmarks", href: "/bookmarks" }, 
                       {
                         icon: User,
                         label: "Profile",
