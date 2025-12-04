@@ -104,30 +104,38 @@ export default async function SettingsPage({ searchParams }: { searchParams: { v
                         </Card>
                     </div>
                 ) : (
-                    // SETTINGS HUB (DEFAULT)
+                    // SETTINGS HUB (DEFAULT) - TAMPILAN UTAMA
                     <>
                         <h2 className="fw-bold mb-4 d-flex align-items-center gap-2">
                             <Settings size={32} className="text-primary" /> Pengaturan Akun
                         </h2>
                         
-                        <Card className="mb-3 bg-dark border-secondary border-opacity-25">
+                        <Card 
+                            className="mb-4 rounded-4 shadow-lg"
+                            style={{ 
+                                background: "rgba(33, 37, 41, 0.9)",
+                                border: '1px solid rgba(124, 58, 237, 0.5)',
+                            }}
+                        >
                             <ListGroup variant="flush">
-                                {/* Navigasi Utama */}
-                                <SettingsActionItem href="/settings?view=privacy" text="Privasi & Keamanan" />
-                                <SettingsActionItem href="/settings?view=notifications" text="Notifikasi" />
+                                {/* Navigasi Kategori */}
+                                <SettingsActionItem href="/settings?view=privacy" text="Privasi & Keamanan" variant="secondary" />
+                                <SettingsActionItem href="/settings?view=notifications" text="Notifikasi" variant="secondary" />
+                                
+                                {/* Dasbor Otonomi */}
                                 <Link href="/settings?view=dashboard" className="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center py-3 hover-bg-opacity border-secondary border-opacity-10">
                                     <span className="fw-bold d-flex align-items-center gap-2">
                                         <Shield size={20} className="text-success"/> Dasbor Otonomi Data
                                     </span>
-                                    <Button variant="primary" size="sm" className="rounded-pill fw-bold">Lihat</Button>
+                                    <Button variant="outline-success" size="sm" className="rounded-pill fw-bold">Lihat</Button>
                                 </Link>
                             </ListGroup>
                         </Card>
 
-                        <Card className="mb-3 bg-dark border-secondary border-opacity-25">
+                        <Card className="mb-3 bg-dark border-secondary border-opacity-25 rounded-4 shadow-lg">
                              <ListGroup variant="flush">
-                                <SettingsActionItem href="/profile/edit" text="Edit Profil" />
-                                {/* FIX: Hapus prop icon={X} */}
+                                {/* Aksi Akun */}
+                                <SettingsActionItem href="/profile/edit" text="Edit Profil" variant="secondary" />
                                 <SettingsActionItem href="#" text="Hapus Akun" isDanger={true} />
                                 <SettingsActionItem href="#" text="Log Out" isDanger={true} isLogout={true} /> 
                             </ListGroup>
