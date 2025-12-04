@@ -52,7 +52,7 @@ export default function About() {
               }}
             >
               <Image
-                src="/images/index/web3.png"
+                src="/images/index/nextjs.jpg"
                 alt="About Corclo"
                 fluid
                 className="rounded-4 shadow-lg w-100"
