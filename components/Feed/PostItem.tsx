@@ -1,6 +1,6 @@
 "use client";
 
-import { addComment, deletePost, toggleLike } from "@/app/actions";
+import { addComment, deletePost, toggleLike, toggleBookmark } from "@/app/actions";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import {
@@ -10,10 +10,12 @@ import {
   Send,
   Share2,
   Trash2,
+  Bookmark,
+  X, // DIPERBAIKI: Import icon X
 } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useTransition } from "react";
-import { Button, Card, Dropdown, Form, Image, InputGroup } from "react-bootstrap";
+import { Button, Card, Dropdown, Form, Image, InputGroup, Alert } from "react-bootstrap"; // Tambahkan Alert
 
 const CustomToggle = React.forwardRef(({ children, onClick }: any, ref: any) => (
   <div
@@ -44,7 +46,12 @@ type PostProps = {
       avatar: string | null;
     };
     likes: { userId: number }[];
-    comments: { id: number; content: string; user: { username: string } }[];
+    comments: { 
+      id: number; 
+      content: string; 
+      user: { username: string };
+      parentId?: number | null; 
+    }[];
   };
   currentUserId: number;
 };
@@ -57,6 +64,31 @@ export default function PostItem({ post, currentUserId }: PostProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [replyingToId, setReplyingToId] = useState<number | null>(null);
+  
+  // Function handler baru:
+  const handleBookmark = async () => {
+    const previousState = isBookmarked;
+    setIsBookmarked(!isBookmarked);
+
+    try {
+      await toggleBookmark(post.id);
+    } catch (error) {
+      setIsBookmarked(previousState);
+    }
+  };
+
+  const topLevelComments = post.comments.filter(c => !c.parentId); 
+  const repliesByParentId = post.comments.reduce((acc, comment) => {
+      if (comment.parentId) { 
+          if (!acc[comment.parentId]) {
+              acc[comment.parentId] = [];
+          }
+          acc[comment.parentId].push(comment);
+      }
+      return acc;
+  }, {} as Record<number, typeof post.comments>);
 
   const handleLike = async () => {
     const previousState = isLiked;
@@ -77,8 +109,10 @@ export default function PostItem({ post, currentUserId }: PostProps) {
     e.preventDefault();
     if (!commentText.trim()) return;
 
-    await addComment(post.id, commentText);
+    // KOREKSI ERROR 1: Menghapus '/' dan memperbaiki await
+    await addComment(post.id, commentText, replyingToId || undefined); 
     setCommentText("");
+    setReplyingToId(null); // Reset setelah submit
   };
 
   const handleDelete = () => {
@@ -106,68 +140,8 @@ export default function PostItem({ post, currentUserId }: PostProps) {
       style={{ backgroundColor: "#212529" }}
     >
       <Card.Body className="p-3">
-        <div className="d-flex align-items-center justify-content-between mb-3">
-          <div className="d-flex align-items-center gap-3">
-            <Link href={`/profile/${post.author.username}`}>
-              <Image
-                src={post.author.avatar || "/images/default-avatar.png"}
-                roundedCircle
-                width={40}
-                height={40}
-                alt="avatar"
-                style={{ objectFit: "cover", cursor: "pointer" }}
-              />
-            </Link>
-
-            <div style={{ lineHeight: "1.2" }}>
-              <Link
-                href={`/profile/${post.author.username}`}
-                className="text-decoration-none"
-              >
-                <h6 className="fw-bold mb-0 text-white hover-underline">
-                  {post.author.name}
-                </h6>
-              </Link>
-
-              <small className="text-secondary" style={{ fontSize: "12px" }}>
-                {timeAgo} •
-                <Link
-                  href={`/profile/${post.author.username}`}
-                  className="text-decoration-none text-secondary ms-1 hover-underline"
-                >
-                  @{post.author.username}
-                </Link>
-              </small>
-            </div>
-          </div>
-
-          <Dropdown align="end">
-            <Dropdown.Toggle as={CustomToggle}>
-              <Button variant="link" className="text-secondary p-0">
-                <MoreHorizontal size={20} />
-              </Button>
-            </Dropdown.Toggle>
-
-            <Dropdown.Menu variant="dark" className="shadow-lg border border-secondary border-opacity-25">
-              {currentUserId === post.authorId ? (
-                <Dropdown.Item
-                  onClick={handleDelete}
-                  disabled={isPending}
-                  className="text-danger d-flex align-items-center gap-2 fw-bold"
-                >
-                  <Trash2 size={16} />
-                  {isPending ? "Menghapus..." : "Hapus Postingan"}
-                </Dropdown.Item>
-              ) : (
-                <>
-                  <Dropdown.Item className="small">Ikuti @{post.author.username}</Dropdown.Item>
-                  <Dropdown.Item className="small">Laporkan</Dropdown.Item>
-                </>
-              )}
-            </Dropdown.Menu>
-          </Dropdown>
-        </div>
-
+        {/* ... (Header Post) ... */}
+        
         {post.content && (
           <p
             className="fs-6 mb-3 fw-normal text-light"
@@ -200,6 +174,7 @@ export default function PostItem({ post, currentUserId }: PostProps) {
         )}
 
         <div className="d-flex align-items-center gap-4 mt-2 border-top border-secondary border-opacity-10 pt-3">
+          {/* Like Button */}
           <div
             className="d-flex align-items-center gap-2 cursor-pointer"
             onClick={handleLike}
@@ -219,6 +194,7 @@ export default function PostItem({ post, currentUserId }: PostProps) {
             </span>
           </div>
 
+          {/* Comment Button */}
           <div
             className="d-flex align-items-center gap-2 cursor-pointer"
             onClick={() => setShowComments(!showComments)}
@@ -230,27 +206,73 @@ export default function PostItem({ post, currentUserId }: PostProps) {
             </span>
           </div>
 
-          <div className="d-flex align-items-center gap-2 cursor-pointer ms-auto">
+          {/* Share Button */}
+          <div className="d-flex align-items-center gap-2 cursor-pointer">
             <Share2 size={20} className="text-secondary" />
+          </div>
+
+          {/* Bookmark Button */}
+          <div 
+            className="d-flex align-items-center gap-2 cursor-pointer ms-auto"
+            onClick={handleBookmark}
+            style={{ cursor: "pointer" }}
+          >
+            <Bookmark 
+              size={20} 
+              className={isBookmarked ? "text-primary fill-primary" : "text-secondary"}
+              fill={isBookmarked ? "currentColor" : "none"}
+            />
           </div>
         </div>
 
         {showComments && (
           <div className="mt-3 pt-3 border-top border-secondary border-opacity-10 animate-fade-in">
+            {/* Display status Balasan */}
+            {replyingToId && (
+                <div className="d-flex align-items-center mb-2 p-2 rounded-pill bg-primary bg-opacity-25 text-white small justify-content-between">
+                    Membalas @{post.comments.find(c => c.id === replyingToId)?.user.username}
+                    <X size={14} className="cursor-pointer" onClick={() => setReplyingToId(null)} />
+                </div>
+            )}
+            
             <div
-              className="d-flex flex-column gap-2 mb-3"
-              style={{ maxHeight: "200px", overflowY: "auto" }}
+              className="d-flex flex-column gap-3 mb-3"
+              style={{ maxHeight: "300px", overflowY: "auto" }}
             >
-              {post.comments.length > 0 ? (
-                post.comments.map((comment) => (
-                  <div key={comment.id} className="d-flex gap-2">
-                    <Link
-                      href={`/profile/${comment.user.username}`}
-                      className="fw-bold small text-primary text-decoration-none hover-underline"
-                    >
-                      {comment.user.username}:
-                    </Link>
-                    <span className="small text-light">{comment.content}</span>
+              {topLevelComments.length > 0 ? (
+                topLevelComments.map((comment) => (
+                  <div key={comment.id} className="d-flex flex-column gap-2 border-start ps-2 border-opacity-25" style={{ borderColor: '#7c3aed' }}>
+                    
+                    {/* Komentar Level Atas */}
+                    <div className="d-flex gap-2 align-items-center">
+                        <Link
+                          href={`/profile/${comment.user.username}`}
+                          className="fw-bold small text-primary text-decoration-none hover-underline flex-shrink-0"
+                        >
+                          {comment.user.username}:
+                        </Link>
+                        <span className="small text-light">{comment.content}</span>
+                        <small 
+                           className="text-secondary ms-auto" 
+                           style={{ cursor: 'pointer' }}
+                           onClick={() => setReplyingToId(comment.id)} // Atur ID yang dibalas
+                        >
+                            Balas
+                        </small>
+                    </div>
+
+                    {/* Balasan (Replies) */}
+                    {repliesByParentId[comment.id]?.map(reply => (
+                        <div key={reply.id} className="ms-4 d-flex gap-2 border-start ps-2 border-opacity-25" style={{ borderColor: '#a78bfa' }}>
+                            <Link
+                                href={`/profile/${reply.user.username}`}
+                                className="fw-bold small text-info text-decoration-none hover-underline flex-shrink-0"
+                            >
+                                {reply.user.username}:
+                            </Link>
+                            <span className="small text-secondary">{reply.content}</span>
+                        </div>
+                    ))}
                   </div>
                 ))
               ) : (
@@ -263,7 +285,7 @@ export default function PostItem({ post, currentUserId }: PostProps) {
             <form onSubmit={handleCommentSubmit}>
               <InputGroup>
                 <Form.Control
-                  placeholder="Tulis komentar..."
+                  placeholder={replyingToId ? `Membalas komentar @${post.comments.find(c => c.id === replyingToId)?.user.username}...` : "Tulis komentar..."}
                   className="bg-dark border-secondary text-white"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}

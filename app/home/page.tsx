@@ -3,6 +3,7 @@ import HomeView from "@/components/Home/HomeView";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { logEngagement } from "../actions";
 
 export default async function HomePage() {
   const cookieStore = await cookies();
@@ -80,6 +81,12 @@ export default async function HomePage() {
     },
     take: 3,
   });
+
+  const postsToLog = allPosts.slice(0, 50); // Batasi log untuk 50 post pertama
+  const viewPromises = postsToLog.map(post => 
+    logEngagement("VIEW" as any, post.id)
+  );
+  await Promise.all(viewPromises);
 
   return (
     <HomeView

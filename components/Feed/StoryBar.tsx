@@ -103,7 +103,7 @@ export default function StoryBar({
       {usersWithStories.map((user, idx) => (
         <Link
           href={`/stories/${user.username}`}
-          key={idx}
+          key={user.username}
           className="text-decoration-none"
         >
           <div className="text-center" style={{ minWidth: `${OUTER_SIZE}px` }}>

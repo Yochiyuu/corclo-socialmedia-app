@@ -13,20 +13,20 @@ enum MediaType {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  username  String    @unique
-  email     String    @unique
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
   name      String
   password  String
   avatar    String?
   bio       String?
-  createdAt DateTime  @default(now())
-  
-  posts     Post[]
-  likes     Like[]
-  comments  Comment[]
-  stories   Story[]
-  
+  createdAt DateTime @default(now())
+
+  posts    Post[]
+  likes    Like[]
+  comments Comment[]
+  stories  Story[]
+
   // Relasi Follow
   followedBy Follows[] @relation("following")
   following  Follows[] @relation("follower")
@@ -35,44 +35,60 @@ model User {
   conversations Conversation[] @relation("ConversationParticipants")
   messages      Message[]
   messageLikes  MessageLike[]
+
+  bookmarks Bookmark[]
+
+  engagementActor  UserEngagementLog[] @relation("ActorEngagement")
+  engagementTarget UserEngagementLog[] @relation("TargetEngagement")
+
+  pingsSent     AffinityPing[] @relation("SentAffinityPings")
+  pingsReceived AffinityPing[] @relation("ReceivedAffinityPings")
+
+  groupMemberships GroupMembership[]
+  groupPosts       GroupPost[]
 }
 
 model Story {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
   expiresAt DateTime
-  
+
   mediaUrl  String
   mediaType MediaType
-  
-  userId    Int
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Post {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   content   String
-  createdAt DateTime  @default(now())
-  
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  Int
+  createdAt DateTime @default(now())
+
+  author   User @relation(fields: [authorId], references: [id])
+  authorId Int
 
   mediaType MediaType?
   mediaUrl  String?
 
-  likes     Like[]
-  comments  Comment[]
+  likes    Like[]
+  comments Comment[]
+
+  visibility String? // 'PUBLIC', 'FOLLOWERS_ONLY'
+
+  engagementTarget UserEngagementLog[]
+  bookmarks        Bookmark[]
 }
 
 model Like {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
 
-  post      Post     @relation(fields: [postId], references: [id])
-  postId    Int
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  post   Post @relation(fields: [postId], references: [id])
+  postId Int
 
   @@unique([userId, postId])
 }
@@ -82,17 +98,21 @@ model Comment {
   content   String
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 
-  post      Post     @relation(fields: [postId], references: [id])
-  postId    Int
+  post   Post @relation(fields: [postId], references: [id])
+  postId Int
+
+  parentId      Int?      @map("parent_id")
+  parentComment Comment?  @relation("ThreadedComments", fields: [parentId], references: [id])
+  replies       Comment[] @relation("ThreadedComments")
 }
 
 model Follows {
-  follower    User @relation("follower", fields: [followerId], references: [id])
-  followerId  Int
-  
+  follower   User @relation("follower", fields: [followerId], references: [id])
+  followerId Int
+
   following   User @relation("following", fields: [followingId], references: [id])
   followingId Int
 
@@ -100,44 +120,140 @@ model Follows {
 }
 
 model Conversation {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   participants User[]    @relation("ConversationParticipants")
   messages     Message[]
 }
 
 model Message {
-  id             Int          @id @default(autoincrement())
-  content        String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  isEdited       Boolean      @default(false)
+  id        Int      @id @default(autoincrement())
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isEdited  Boolean  @default(false)
 
   // FIELD BARU UNTUK MEDIA
-  mediaUrl       String?
-  mediaType      MediaType?
+  mediaUrl  String?
+  mediaType MediaType?
 
   conversationId Int
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  senderId       Int
-  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  senderId Int
+  sender   User @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
-  likes          MessageLike[]
+  likes MessageLike[]
 }
 
 // Model Baru
 model MessageLike {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
 
-  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
   messageId Int
 
   @@unique([userId, messageId])
+}
+
+// Log Interaksi untuk metrik Anti-Algoritma (UserEngagementLog)
+enum EngagementType {
+  VIEW
+  LIKE
+  COMMENT
+  FOLLOW
+  DM_SEND
+  PING_SEND
+}
+
+model UserEngagementLog {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+
+  // Aktor yang melakukan aksi
+  actorId Int
+  actor   User @relation("ActorEngagement", fields: [actorId], references: [id], onDelete: Cascade)
+
+  // Target aksi (bisa Post, User, atau Group)
+  targetPostId Int?  @map("post_id")
+  targetPost   Post? @relation(fields: [targetPostId], references: [id])
+  targetUserId Int?  @map("target_user_id")
+  targetUser   User? @relation("TargetEngagement", fields: [targetUserId], references: [id])
+
+  type EngagementType
+}
+
+// Fitur Koneksi Unik (Affinity Echo)
+model AffinityPing {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  status    String // PENDING, ACCEPTED, REJECTED
+  score     Float // Skor afinitas saat Ping dikirim
+
+  senderId Int
+  sender   User @relation("SentAffinityPings", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId Int
+  receiver   User @relation("ReceivedAffinityPings", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+}
+
+// Komunitas / Circle
+model Group {
+  id          Int     @id @default(autoincrement())
+  slug        String  @unique
+  name        String
+  description String?
+  isPrivate   Boolean @default(false)
+
+  members GroupMembership[]
+  posts   GroupPost[]
+}
+
+model GroupMembership {
+  id       Int      @id @default(autoincrement())
+  joinedAt DateTime @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  role String // MEMBER, MODERATOR, ADMIN
+
+  @@unique([userId, groupId])
+}
+
+model GroupPost {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  groupId Int
+  group   Group @relation(fields: [groupId], references: [id])
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+}
+
+// Bookmarks
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
 }

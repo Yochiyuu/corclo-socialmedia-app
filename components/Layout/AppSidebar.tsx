@@ -46,9 +46,14 @@ export default function AppSidebar({
                 icon: User,
                 label: "Profile",
                 href: `/profile/${currentUser.username}`,
-                active: false,
+                active: activePage === "profile",
               },
-              { icon: Settings, label: "Settings", href: "#", active: false },
+              { 
+                icon: Settings, 
+                label: "Settings", 
+                href: "/settings",
+                active: activePage === "settings"
+              },
             ].map((item, index) => (
               <Link
                 key={index}

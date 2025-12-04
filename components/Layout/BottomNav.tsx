@@ -24,7 +24,11 @@ export default function BottomNav({
       href: `/profile/${currentUser.username}`,
       active: pathname.includes("/profile"),
     },
-    { icon: Settings, href: "#", active: false },
+    { 
+      icon: Settings, 
+      href: "/settings", 
+      active: pathname === "/settings" || pathname.startsWith("/settings/")
+    },
   ];
 
   return (

@@ -6,12 +6,16 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
+
+export type EngagementType = 'VIEW' | 'LIKE' | 'COMMENT' | 'FOLLOW' | 'DM_SEND' | 'PING_SEND';
 
 export type ActionState = {
   message: string;
   success: boolean;
 } | null;
 
+type AffinityFormState = { success: boolean; message: string; } | undefined | null;
 // --- AUTH & USER ---
 
 export async function registerUser(
@@ -114,6 +118,13 @@ export async function createPost(formData: FormData) {
     redirect("/login");
   }
 
+  const hasContent = content && content.trim().length > 0;
+  const hasMedia = mediaFile && mediaFile.size > 0;
+
+  if (!hasContent && !hasMedia) {
+    throw new Error("Postingan tidak boleh kosong.");
+  }
+
   const authorId = parseInt(userIdCookie);
 
   let mediaUrl = null;
@@ -143,6 +154,7 @@ export async function createPost(formData: FormData) {
       authorId,
       mediaUrl,
       mediaType,
+      visibility: "PUBLIC",
     },
   });
 
@@ -211,6 +223,7 @@ export async function toggleLike(postId: number) {
           postId,
         },
       });
+      await logEngagement("LIKE", postId); 
     }
 
     revalidatePath("/home");
@@ -219,7 +232,45 @@ export async function toggleLike(postId: number) {
   }
 }
 
-export async function addComment(postId: number, content: string) {
+// --- BOOKMARKS ---
+
+export async function toggleBookmark(postId: number) {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+
+  if (!userIdCookie) return;
+  const userId = parseInt(userIdCookie);
+
+  try {
+    const existingBookmark = await (prisma as any).bookmark.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (existingBookmark) {
+      await (prisma as any).bookmark.delete({
+        where: { id: existingBookmark.id },
+      });
+    } else {
+      await (prisma as any).bookmark.create({
+        data: {
+          userId,
+          postId,
+        },
+      });
+    }
+
+    revalidatePath("/home");
+  } catch (error) {
+    console.error("Error toggling bookmark:", error);
+  }
+}
+
+export async function addComment(postId: number, content: string, parentId?: number) {
   const cookieStore = await cookies();
   const userIdCookie = cookieStore.get("userId")?.value;
 
@@ -233,9 +284,10 @@ export async function addComment(postId: number, content: string) {
         content,
         postId,
         userId,
+        parentId,
       },
     });
-
+    await logEngagement("COMMENT", postId);
     revalidatePath("/home");
   } catch (error) {
     console.error("Error adding comment:", error);
@@ -279,6 +331,8 @@ export async function toggleFollow(targetUserId: number) {
           followingId: targetUserId,
         },
       });
+
+      await logEngagement("FOLLOW" as EngagementType, undefined, targetUserId);
     }
 
     revalidatePath("/home");
@@ -585,6 +639,16 @@ export async function sendMessage(formData: FormData) {
     where: { id: conversationId },
     data: { updatedAt: new Date() },
   });
+
+  const targetUser = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    include: { participants: true },
+  }).then(conv => conv?.participants.find(p => p.id !== parseInt(userId!)));
+  
+  if (targetUser) {
+    await logEngagement("DM_SEND" as EngagementType, undefined, targetUser.id);
+  }
+
   revalidatePath("/messages");
   revalidatePath("/messages/[username]");
 }
@@ -639,4 +703,179 @@ export async function toggleMessageLike(messageId: number) {
     await prisma.messageLike.create({ data: { userId, messageId } });
   }
   revalidatePath("/messages");
+}
+
+export async function logEngagement(
+  type: EngagementType,
+  postId?: number,
+  targetUserId?: number
+) {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+  if (!userIdCookie) return;
+
+  try {
+    await (prisma as any).userEngagementLog.create({ 
+      data: {
+        actorId: parseInt(userIdCookie),
+        type: type,
+        targetPostId: postId,
+        targetUserId: targetUserId,
+      },
+    });
+  } catch (error) {
+    console.error(`Error logging ${type}:`, error);
+  }
+}
+
+// --- FUNGSI UNTUK DASHBOARD OTONOMI ---
+
+export async function fetchFeedLog() {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+  if (!userIdCookie) return [];
+  const currentUserId = parseInt(userIdCookie);
+
+  // Ambil 100 log VIEW terakhir
+  return await prisma.userEngagementLog.findMany({
+    where: { actorId: currentUserId, type: "VIEW" },
+    orderBy: { timestamp: "desc" },
+    take: 100,
+    include: {
+      targetPost: {
+        select: {
+          id: true,
+          content: true,
+          author: { select: { username: true, name: true } }
+        }
+      }
+    },
+  });
+}
+
+export async function exportUserData(formData: FormData) { 
+  const cookieStore = await cookies();
+  const userIdCookie = (await cookieStore).get("userId")?.value; 
+
+  if (!userIdCookie) return;
+  const currentUserId = parseInt(userIdCookie);
+
+  const userData = await prisma.user.findUnique({
+    where: { id: currentUserId },
+    select: {
+      username: true,
+      email: true,
+      posts: true,
+      comments: true,
+      likes: true,
+      engagementActor: true,
+    },
+  });
+
+  console.log("DATA EXPORT TRIGGERED:", userData?.username);
+}
+
+// --- AFFINITY ECHO FUNCTIONS ---
+
+const PING_LIMIT_PER_DAY = 3;
+
+/**
+ * Menghitung skor afinitas berdasarkan Mutuals
+ */
+async function calculateAffinityScore(currentUserId: number, targetUserId: number): Promise<{ score: number, mutualFollowers: number }> {
+    // Mencari mutual followers: user A follows B DAN B follows A.
+    // Kita harus mencari anggota yang di-follow oleh A, yang juga di-follow oleh B.
+    
+    // 1. Dapatkan daftar pengguna yang di-follow oleh target (B)
+    const targetFollowing = await prisma.follows.findMany({ 
+        where: { followerId: targetUserId }, 
+        select: { followingId: true } 
+    });
+    const targetFollowingIds = targetFollowing.map(f => f.followingId);
+
+    // 2. Hitung berapa banyak ID di atas yang juga di-follow oleh current user (A)
+    const mutualFollowsCount = await prisma.follows.count({
+        where: {
+            followerId: currentUserId,
+            followingId: {
+                in: targetFollowingIds // Filter dengan ID yang di-follow oleh Target
+            }
+        }
+    });
+
+    // --- Dummy Affinity Logic ---
+    let score = 0.5;
+    if (mutualFollowsCount > 2) {
+        score = 0.8;
+    } else if (mutualFollowsCount > 0) {
+        score = 0.65;
+    }
+    
+    return { score, mutualFollowers: mutualFollowsCount }; 
+}
+
+
+export async function sendAffinityPing(
+    // Argumen 1: prevState (required oleh useFormState)
+    prevState: AffinityFormState, 
+    // Argumen 2: formData
+    formData: FormData 
+): Promise<AffinityFormState> { // Mengembalikan Promise<State>
+    const cookieStore = await cookies();
+    const userIdCookie = cookieStore.get("userId")?.value;
+    if (!userIdCookie) return prevState;
+    const currentUserId = parseInt(userIdCookie);
+
+    // Ambil targetUserId dari FormData
+    const targetUserIdStr = formData.get("targetUserId") as string;
+    if (!targetUserIdStr) return { success: false, message: "Target ID hilang." };
+
+    const targetUserId = parseInt(targetUserIdStr);
+
+    if (currentUserId === targetUserId) {
+        return { success: false, message: "Tidak bisa mengirim Ping ke diri sendiri." };
+    }
+
+    const PING_LIMIT_PER_DAY = 3; // Pindahkan konstanta ke sini atau scope global
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Cek batas Ping harian
+    const sentToday = await (prisma as any).affinityPing.count({
+        where: {
+            senderId: currentUserId,
+            createdAt: { gte: today },
+        },
+    });
+
+    if (sentToday >= PING_LIMIT_PER_DAY) {
+        return { success: false, message: `Batas Ping harian (${PING_LIMIT_PER_DAY}x) telah tercapai.` };
+    }
+
+    // Cek apakah Ping sudah pernah terkirim
+    const existingPing = await (prisma as any).affinityPing.findUnique({
+        where: { senderId_receiverId: { senderId: currentUserId, receiverId: targetUserId } }
+    });
+
+    if (existingPing) {
+        return { success: false, message: "Anda sudah pernah mengirim Ping ke pengguna ini." };
+    }
+
+    // Asumsi calculateAffinityScore mengembalikan { score: number }
+    const { score } = await (calculateAffinityScore as any)(currentUserId, targetUserId);
+
+    await (prisma as any).affinityPing.create({
+        data: {
+            senderId: currentUserId,
+            receiverId: targetUserId,
+            status: "PENDING",
+            score: score,
+        },
+    });
+    
+    await logEngagement("PING_SEND" as EngagementType, undefined, targetUserId);
+    
+    revalidatePath("/connect/echo"); 
+    return { success: true, message: "Affinity Ping terkirim! Menunggu tanggapan." };
 }

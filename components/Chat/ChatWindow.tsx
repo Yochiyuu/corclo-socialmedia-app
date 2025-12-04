@@ -17,6 +17,7 @@ import {
   Send,
   Trash2,
   X,
+  Lock,
 } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
@@ -185,6 +186,14 @@ export default function ChatWindow({
             </small>
           </div>
         </Link>
+
+        {/* BADGE E2EE */}
+        <div 
+          className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-success bg-opacity-25 text-success"
+          style={{ fontSize: "10px", fontWeight: "bold" }}
+        >
+            <Lock size={12} /> END-TO-END ENCRYPTED
+        </div>
       </div>
 
       {/* Messages Area */}
