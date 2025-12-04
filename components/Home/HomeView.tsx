@@ -263,13 +263,13 @@ export default function HomeView({
                       { icon: Hash, label: "Explore", href: "/explore" },
                       { icon: Bell, label: "Notifications", href: "#" },
                       { icon: MessageCircle, label: "Messages", href: "/messages" },
-                      { icon: Bookmark, label: "Bookmarks", href: "#" },
+                      { icon: Bookmark, label: "Bookmarks", href: "/bookmarks" },
                       {
                         icon: User,
                         label: "Profile",
                         href: `/profile/${currentUser.username}`,
                       },
-                      { icon: Settings, label: "Settings", href: "#" },
+                      { icon: Settings, label: "Settings", href: "/settings" },
                     ].map((item, index) => (
                       <Link
                         key={index}
