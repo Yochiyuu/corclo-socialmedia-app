@@ -271,12 +271,27 @@ export default function ProfileView({
             </div>
 
             <div className="d-flex gap-4 mb-2">
-              <span>
-                <b className="text-white fs-5">{user._count.following}</b> <span className="text-secondary">Following</span>
-              </span>
-              <span>
-                <b className="text-white fs-5">{user._count.followedBy}</b> <span className="text-secondary">Followers</span>
-              </span>
+              <a 
+                href={`/profile/${user.username}/following`} 
+                className="text-decoration-none text-white d-flex align-items-center gap-1 hover-opacity"
+                style={{ transition: "opacity 0.2s" }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+              >
+                <b className="fs-5">{user._count.following}</b> 
+                <span className="text-secondary">Following</span>
+              </a>
+
+              <a 
+                href={`/profile/${user.username}/followers`}
+                className="text-decoration-none text-white d-flex align-items-center gap-1 hover-opacity"
+                style={{ transition: "opacity 0.2s" }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+              >
+                <b className="fs-5">{user._count.followedBy}</b> 
+                <span className="text-secondary">Followers</span>
+              </a>
             </div>
           </div>
         </div>
