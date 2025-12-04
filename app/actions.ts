@@ -640,3 +640,28 @@ export async function toggleMessageLike(messageId: number) {
   }
   revalidatePath("/messages");
 }
+
+export async function getPostDetails(postId: number) {
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        author: { select: { id: true, username: true, avatar: true } },
+        likes: { select: { userId: true } },
+        comments: {
+          include: {
+            user: { select: { id: true, username: true, avatar: true } },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+        _count: {
+          select: { likes: true, comments: true },
+        },
+      },
+    });
+    return post;
+  } catch (error) {
+    console.error("Error fetching post details:", error);
+    return null;
+  }
+}
