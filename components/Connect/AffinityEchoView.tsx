@@ -8,7 +8,7 @@ import AffinityPingForm from "./AffinityPingForm";
 // --- KONFIGURASI ECHO ---
 const VISUALIZER_CONFIG = {
     CARD_HEIGHT: '175px', // Tinggi container visualizer
-    CONTENT_TOP_OFFSET: -10, // Offset Vertikal Akhir (di luar 50%) dalam piksel (menarik ke atas 15px)
+    CONTENT_TOP_OFFSET: -14, // Offset Vertikal Akhir (di luar 50%) dalam piksel (menarik ke atas 15px)
     BORDER_RADIUS: '20px', // Custom border radius untuk card visualizer
     AVATAR_SIZE: 90,
 };
@@ -103,8 +103,8 @@ export default function AffinityEchoView({
                                             <div
                                                 className="rounded-circle position-absolute top-50 start-50 translate-middle animate-pulse-slow"
                                                 style={{
-                                                    width: `${VISUALIZER_CONFIG.AVATAR_SIZE + user.mutualFollowers * 25}px`,
-                                                    height: `${VISUALIZER_CONFIG.AVATAR_SIZE + user.mutualFollowers * 25}px`,
+                                                    width: `${VISUALIZER_CONFIG.AVATAR_SIZE + user.mutualFollowers * 30}px`,
+                                                    height: `${VISUALIZER_CONFIG.AVATAR_SIZE + user.mutualFollowers * 30}px`,
                                                     background: `radial-gradient(circle, ${glowColor} 0%, rgba(0,0,0,0) 70%)`,
                                                     zIndex: 1,
                                                     pointerEvents: 'none',
@@ -115,7 +115,7 @@ export default function AffinityEchoView({
                                             <div
                                                 className="position-absolute text-center z-3"
                                                 style={{
-                                                    top: '60%',
+                                                    top: '62%',
                                                     left: '50%',
                                                     transform: `translate(-50%, -50%)`,
                                                     marginTop: `${VISUALIZER_CONFIG.CONTENT_TOP_OFFSET}px`,
