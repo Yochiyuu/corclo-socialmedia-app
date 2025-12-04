@@ -262,7 +262,7 @@ export default function HomeView({
                         active: true,
                       },
                       { icon: Hash, label: "Explore", href: "/explore" }, 
-                      { icon: Bell, label: "Notifications", href: "#" },
+                      { icon: Bell, label: "Notifications", href: "/notifications" },
                       { icon: Zap, label: "Connect", href: "/connect/echo" },
                       { icon: MessageCircle, label: "Messages", href: "/messages" },
                       { icon: Bookmark, label: "Bookmarks", href: "/bookmarks" }, 

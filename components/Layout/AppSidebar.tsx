@@ -34,7 +34,12 @@ export default function AppSidebar({
                 active: activePage === "home",
               },
               { icon: Hash, label: "Explore", href: "#", active: false },
-              { icon: Bell, label: "Notifications", href: "#", active: false },
+              { 
+                icon: Bell, 
+                label: "Notifications", 
+                href: "/notifications",  
+                active: activePage === "notifications" 
+              },
               {
                 icon: MessageCircle,
                 label: "Messages",
