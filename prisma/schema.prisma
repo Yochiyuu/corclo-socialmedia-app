@@ -46,6 +46,9 @@ model User {
 
   groupMemberships GroupMembership[]
   groupPosts       GroupPost[]
+
+  notificationsReceived Notification[] @relation("ReceivedNotifications")
+  notificationsSent     Notification[] @relation("SentNotifications")
 }
 
 model Story {
@@ -78,6 +81,8 @@ model Post {
 
   engagementTarget UserEngagementLog[]
   bookmarks        Bookmark[]
+
+  notifications Notification[]
 }
 
 model Like {
@@ -107,6 +112,8 @@ model Comment {
   parentId      Int?      @map("parent_id")
   parentComment Comment?  @relation("ThreadedComments", fields: [parentId], references: [id])
   replies       Comment[] @relation("ThreadedComments")
+
+  notifications Notification[]
 }
 
 model Follows {
@@ -256,4 +263,23 @@ model Bookmark {
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+  type      String   
+
+  recipient   User @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId Int
+
+  sender   User @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId Int
+
+  postId Int?
+  post   Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  commentId Int?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
 }

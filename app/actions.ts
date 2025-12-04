@@ -205,6 +205,10 @@ export async function toggleLike(postId: number) {
   const userId = parseInt(userIdCookie);
 
   try {
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    
+    if (!post) return; 
+
     const existingLike = await prisma.like.findUnique({
       where: {
         userId_postId: {
@@ -225,7 +229,8 @@ export async function toggleLike(postId: number) {
           postId,
         },
       });
-      await logEngagement("LIKE", postId); // TAMBAHAN LOKAL
+      await logEngagement("LIKE", postId);
+      await createNotification(post.authorId, userId, "LIKE", postId);
     }
 
     revalidatePath("/home");
@@ -283,21 +288,33 @@ export async function addComment(postId: number, content: string, parentId?: num
   const userId = parseInt(userIdCookie);
 
   try {
-    await prisma.comment.create({
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) return;
+
+    const newComment = await prisma.comment.create({
       data: {
         content,
         postId,
         userId,
-        parentId, // FIELD BARU DARI LOKAL
+        parentId, 
       },
     });
-    await logEngagement("COMMENT", postId); // TAMBAHAN LOKAL
+    
+    await logEngagement("COMMENT", postId);
+    await createNotification(post.authorId, userId, "COMMENT", postId, newComment.id);
+
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({ where: { id: parentId } });
+      if (parentComment && parentComment.userId !== post.authorId) {
+        await createNotification(parentComment.userId, userId, "REPLY", postId, newComment.id);
+      }
+    }
+
     revalidatePath("/home");
   } catch (error) {
     console.error("Error adding comment:", error);
   }
 }
-
 // --- SOCIAL ---
 
 export async function toggleFollow(targetUserId: number) {
@@ -337,6 +354,7 @@ export async function toggleFollow(targetUserId: number) {
       });
 
       await logEngagement("FOLLOW" as EngagementType, undefined, targetUserId); // TAMBAHAN LOKAL
+      await createNotification(targetUserId, currentUserId, "FOLLOW");
     }
 
     revalidatePath("/home");
@@ -912,4 +930,82 @@ export async function getPostDetails(postId: number) {
     console.error("Error fetching post details:", error);
     return null;
   }
+}
+
+async function createNotification(
+  recipientId: number,
+  senderId: number,
+  type: 'LIKE' | 'COMMENT' | 'FOLLOW' | 'REPLY',
+  postId?: number,
+  commentId?: number
+) {
+  if (recipientId === senderId) return;
+
+  try {
+    if (type === 'LIKE' || type === 'FOLLOW') {
+      const existing = await prisma.notification.findFirst({
+        where: {
+          recipientId,
+          senderId,
+          type,
+          postId,
+          read: false,
+        },
+      });
+      if (existing) return;
+    }
+
+    await prisma.notification.create({
+      data: {
+        recipientId,
+        senderId,
+        type,
+        postId,
+        commentId,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to create notification:", error);
+  }
+}
+
+export async function getNotifications() {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+  if (!userIdCookie) return [];
+
+  const notifications = await prisma.notification.findMany({
+    where: { recipientId: parseInt(userIdCookie) },
+    include: {
+      sender: {
+        select: { username: true, avatar: true },
+      },
+      post: {
+        select: { id: true, content: true, mediaUrl: true },
+      },
+      comment: {
+        select: { content: true },
+      }
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  return notifications;
+}
+
+export async function markNotificationsAsRead() {
+  const cookieStore = await cookies();
+  const userIdCookie = cookieStore.get("userId")?.value;
+  if (!userIdCookie) return;
+
+  await prisma.notification.updateMany({
+    where: {
+      recipientId: parseInt(userIdCookie),
+      read: false,
+    },
+    data: { read: true },
+  });
+  
+  revalidatePath("/notifications");
 }
