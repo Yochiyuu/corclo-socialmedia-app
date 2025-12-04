@@ -1,9 +1,10 @@
-// components/Chat/ChatSidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Image } from "react-bootstrap";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export default function ChatSidebar({
   conversations,
@@ -11,7 +12,7 @@ export default function ChatSidebar({
   conversations: any[];
 }) {
   const params = useParams();
-  const activeUsername = params.username as string; // Ambil username dari URL
+  const activeUsername = params.username as string;
 
   if (conversations.length === 0) {
     return (
@@ -57,10 +58,7 @@ export default function ChatSidebar({
                 </h6>
                 {lastMessage && (
                   <span className="text-secondary" style={{ fontSize: "10px" }}>
-                    {new Date(lastMessage.createdAt).toLocaleDateString([], {
-                      day: "numeric",
-                      month: "short",
-                    })}
+                    {format(new Date(lastMessage.createdAt), 'd MMM', { locale: idLocale })}
                   </span>
                 )}
               </div>
