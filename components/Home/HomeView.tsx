@@ -124,7 +124,7 @@ export default function HomeView({
   }
 
   return (
-    <div className="bg-black min-vh-100 text-white">
+    <div className="bg-black min-vh-100 text-white" suppressHydrationWarning={true}>
       <Navbar
         expand="lg"
         className="bg-dark border-bottom border-secondary border-opacity-25 sticky-top"

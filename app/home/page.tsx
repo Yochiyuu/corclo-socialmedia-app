@@ -80,6 +80,11 @@ export default async function HomePage() {
     })),
   })) as any;
 
+  const currentUserSerialized = {
+    ...currentUser,
+    createdAt: currentUser.createdAt.toISOString(),
+  } as any;
+
   const suggestions = await prisma.user.findMany({
     where: {
       id: { not: currentUserId },
@@ -92,7 +97,7 @@ export default async function HomePage() {
 
   return (
     <HomeView
-      currentUser={currentUser}
+      currentUser={currentUserSerialized}
       allPosts={allPostsSerialized}
       currentUserId={currentUserId}
       suggestions={suggestions}
