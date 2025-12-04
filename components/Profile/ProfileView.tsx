@@ -95,6 +95,7 @@ export default function ProfileView({
       username: user.username,
       avatar: user.avatar,
     },
+    bookmarks: post.bookmarks || [],
   }));
 
   const mediaData = postsData.filter((post) => post.mediaUrl !== null);
@@ -103,6 +104,7 @@ export default function ProfileView({
     ...like.post,
     authorId: like.post.authorId,
     author: like.post.author,
+    bookmarks: like.post.bookmarks || [],
   }));
   
   const uniqueReplyIds = new Set();
@@ -113,7 +115,8 @@ export default function ProfileView({
         repliesData.push({
             ...comment.post,
             authorId: comment.post.authorId,
-            author: comment.post.author
+            author: comment.post.author,
+            bookmarks: comment.post.bookmarks || [],
         });
     }
   });

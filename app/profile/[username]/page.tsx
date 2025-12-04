@@ -22,6 +22,7 @@ export default async function UserProfilePage({ params }: Props) {
         avatar: true,
       },
     },
+
     likes: { select: { userId: true } },
     comments: {
       include: { user: { select: { username: true } } },
@@ -82,12 +83,14 @@ export default async function UserProfilePage({ params }: Props) {
     return notFound();
   }
 
+  const serializedUser = JSON.parse(JSON.stringify(user));
+
   const isOwnProfile = currentUserId === user.id;
   const isFollowing = user.followedBy.length > 0;
 
   return (
     <ProfileView
-      user={user}
+      user={serializedUser} 
       isOwnProfile={isOwnProfile}
       currentUserId={currentUserId}
       isFollowing={isFollowing}
